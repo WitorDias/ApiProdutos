@@ -5,7 +5,6 @@ import com.grupo3.AppProdutos.model.MovimentoEstoque;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.model.TipoMovimento;
 import com.grupo3.AppProdutos.repository.EstoqueMovimentoRepository;
-import com.grupo3.AppProdutos.repository.ProdutoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,18 +16,18 @@ public class MovimentoEstoqueService {
 
     private final EstoqueMovimentoRepository estoqueMovimentoRepository;
     private final EstoqueService estoqueService;
-    private final ProdutoRepository produtoRepository;
+    private final ProdutoConsultaService produtoConsultaService;
 
-    public MovimentoEstoqueService(EstoqueMovimentoRepository estoqueMovimentoRepository, EstoqueService estoqueService, ProdutoRepository produtoRepository) {
+    public MovimentoEstoqueService(EstoqueMovimentoRepository estoqueMovimentoRepository, EstoqueService estoqueService, ProdutoConsultaService produtoConsultaService) {
         this.estoqueMovimentoRepository = estoqueMovimentoRepository;
         this.estoqueService = estoqueService;
-        this.produtoRepository = produtoRepository;
+        this.produtoConsultaService = produtoConsultaService;
     }
 
     @Transactional
     public MovimentoEstoque registrarEntrada(Long produtoId, Integer quantidade){
         validarQuantidade(quantidade);
-        Produto produto = buscarProdutoPorId(produtoId);
+        Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
         Estoque estoque = estoqueService.buscarEstoquePorProdutoId(produtoId);
         estoqueService.atualizarQuantidadeEstoque(produtoId, estoque.getQuantidade() + quantidade);
         MovimentoEstoque movimento = MovimentoEstoque.builder()
@@ -43,7 +42,7 @@ public class MovimentoEstoqueService {
 
     public MovimentoEstoque registrarSaida(Long produtoId, Integer quantidade){
         validarQuantidade(quantidade);
-        Produto produto = buscarProdutoPorId(produtoId);
+        Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
         Estoque estoque = estoqueService.buscarEstoquePorProdutoId(produtoId);
         if(estoque.getQuantidade() < quantidade){
             throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getId() + " " + produto.getNome());
@@ -59,21 +58,14 @@ public class MovimentoEstoqueService {
     }
 
     public List<MovimentoEstoque> listarMovimentosPorProdutoId(Long produtoId){
-        Produto produto = buscarProdutoPorId(produtoId);
+        Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
         return estoqueMovimentoRepository.findByProduto(produto);
     }
 
 
     public void deletarMovimentoEstoquePorProdutoId(Long id){
-        var produtoParaDeletar = buscarProdutoPorId(id);
+        var produtoParaDeletar = produtoConsultaService.buscarProdutoPorId(id);
         estoqueMovimentoRepository.deleteByProduto(produtoParaDeletar);
-    }
-
-    public Produto buscarProdutoPorId(Long produtoId){
-        Produto produto = produtoRepository.findProdutoById(produtoId).orElseThrow(
-                () -> new RuntimeException("produto não encontrado")
-        );
-        return produto;
     }
 
     private void validarQuantidade(Integer quantidade){

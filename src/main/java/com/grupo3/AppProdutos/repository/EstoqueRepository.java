@@ -19,5 +19,5 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
             DELETE FROM Estoque e
             WHERE e.produto.id = :produtoId
             """)
-    void deleteByProdutoId(Long id);
+    void deleteByProdutoId(Long produtoId);
 }

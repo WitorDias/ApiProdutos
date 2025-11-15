@@ -21,18 +21,23 @@ public class ProdutoController {
 
     @PostMapping
     public ResponseEntity<Produto> salvarProduto(@RequestBody CriarProdutoRequest request){
-        return ResponseEntity.ok().body(produtoService.salvarProduto(request));
-
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(produtoService.salvarProduto(request));
     }
 
     @GetMapping
     public ResponseEntity<List<Produto>> buscarListaDeProdutos(){
-        return ResponseEntity.ok().body(produtoService.buscarListaDeProdutos());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(produtoService.buscarListaDeProdutos());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Produto> buscarProdutoPorId(@PathVariable Long id){
-        return ResponseEntity.ok().body(produtoService.buscarProdutoPorId(id));
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(produtoService.buscarProdutoPorId(id));
     }
 
     @PutMapping

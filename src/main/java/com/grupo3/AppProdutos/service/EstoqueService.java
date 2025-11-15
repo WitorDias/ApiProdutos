@@ -3,7 +3,6 @@ package com.grupo3.AppProdutos.service;
 import com.grupo3.AppProdutos.model.Estoque;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.EstoqueRepository;
-import com.grupo3.AppProdutos.repository.ProdutoRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -13,13 +12,12 @@ import java.time.LocalDateTime;
 public class EstoqueService {
 
     private final EstoqueRepository estoqueRepository;
-    private final ProdutoRepository produtoRepository;
+    private final ProdutoConsultaService produtoConsultaService;
 
-    public EstoqueService(EstoqueRepository estoqueRepository, ProdutoRepository produtoRepository) {
+    public EstoqueService(EstoqueRepository estoqueRepository, ProdutoConsultaService produtoConsultaService) {
         this.estoqueRepository = estoqueRepository;
-        this.produtoRepository = produtoRepository;
+        this.produtoConsultaService = produtoConsultaService;
     }
-
 
     @Transactional
     public Estoque criarEstoqueParaProduto(Produto produto, Integer quantidadeInicial){
@@ -38,7 +36,7 @@ public class EstoqueService {
 
     public Estoque buscarEstoquePorProdutoId(Long produtoId){
 
-        Produto produto = buscarProdutoPorId(produtoId);
+        Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
 
         return estoqueRepository.findByProduto(produto).orElseThrow(
                 () -> new RuntimeException("Estoque não encontrado para este produto.")
@@ -58,8 +56,8 @@ public class EstoqueService {
 
     public void deletarEstoquePorProdutoId(Long produtoId){
 
-        var produto = buscarProdutoPorId(produtoId);
-        estoqueRepository.deleteByProdutoId(produtoId);
+        var produto = produtoConsultaService.buscarProdutoPorId(produtoId);
+        estoqueRepository.deleteByProdutoId(produto.getId());
     }
 
     private void validarQuantidade(Integer quantidade){
@@ -69,13 +67,5 @@ public class EstoqueService {
         }
 
     }
-
-    public Produto buscarProdutoPorId(Long produtoId){
-        Produto produto = produtoRepository.findProdutoById(produtoId).orElseThrow(
-                () -> new RuntimeException("produto não encontrado")
-        );
-        return produto;
-    }
-
 
 }

@@ -1,12 +1,12 @@
 package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
-import com.grupo3.AppProdutos.model.Estoque;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -18,12 +18,15 @@ public class ProdutoService {
     private final ProdutoRepository produtoRepository;
     private final EstoqueService estoqueService;
     private final MovimentoEstoqueService movimentoEstoqueService;
+    private final ProdutoConsultaService produtoConsultaService;
 
-    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, MovimentoEstoqueService movimentoEstoqueService) {
+    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, MovimentoEstoqueService movimentoEstoqueService, ProdutoConsultaService produtoConsultaService) {
         this.produtoRepository = produtoRepository;
         this.estoqueService = estoqueService;
         this.movimentoEstoqueService = movimentoEstoqueService;
+        this.produtoConsultaService = produtoConsultaService;
     }
+
     public List<Produto> buscarListaDeProdutos(){
         return produtoRepository.findAll();
     }
@@ -47,16 +50,14 @@ public class ProdutoService {
         produto.setAtualizadoEm(LocalDateTime.now());
 
         Produto produtoSalvo = produtoRepository.save(produto);
-        Estoque estoque = estoqueService.criarEstoqueParaProduto(produtoSalvo, request.quantidade());
+        estoqueService.criarEstoqueParaProduto(produtoSalvo, request.quantidade());
 
         return produtoSalvo;
 
     }
 
     public Produto buscarProdutoPorId(Long id){
-        return produtoRepository.findProdutoById(id).orElseThrow(
-                () -> new RuntimeException("Produto não encontrado")
-        );
+        return produtoConsultaService.buscarProdutoPorId(id);
     }
 
     @Transactional
