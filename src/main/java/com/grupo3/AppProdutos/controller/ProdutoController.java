@@ -1,5 +1,6 @@
 package com.grupo3.AppProdutos.controller;
 
+import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.service.ProdutoService;
 import org.springframework.http.HttpStatus;
@@ -19,8 +20,8 @@ public class ProdutoController {
     }
 
     @PostMapping
-    public ResponseEntity<Produto> salvarProduto(@RequestBody Produto produto){
-        return ResponseEntity.ok().body(produtoService.salvarProduto(produto));
+    public ResponseEntity<Produto> salvarProduto(@RequestBody CriarProdutoRequest request){
+        return ResponseEntity.ok().body(produtoService.salvarProduto(request));
 
     }
 

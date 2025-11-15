@@ -46,13 +46,13 @@ public class MovimentoEstoqueService {
         Produto produto = buscarProdutoPorId(produtoId);
         Estoque estoque = estoqueService.buscarEstoquePorProdutoId(produtoId);
         if(estoque.getQuantidade() < quantidade){
-            throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getId());
+            throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getId() + " " + produto.getNome());
         }
         estoqueService.atualizarQuantidadeEstoque(produtoId, estoque.getQuantidade() - quantidade);
         MovimentoEstoque movimento = MovimentoEstoque.builder()
                 .produto(produto)
                 .quantidade(quantidade)
-                .tipoMovimento(TipoMovimento.ENTRADA)
+                .tipoMovimento(TipoMovimento.SAIDA)
                 .criadoEm(LocalDateTime.now())
                 .build();
         return estoqueMovimentoRepository.save(movimento);

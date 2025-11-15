@@ -3,7 +3,6 @@ CREATE TABLE produto (
     nome VARCHAR(255) NOT NULL,
     descricao TEXT,
     preco DECIMAL(19,2) NOT NULL,
-    quantidade INTEGER NOT NULL,
     sku VARCHAR(50) NOT NULL UNIQUE,
     criado_em TIMESTAMP NOT NULL,
     atualizado_em TIMESTAMP NOT NULL,

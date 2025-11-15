@@ -21,7 +21,6 @@ public class Produto {
     private String nome;
     private String descricao;
     private BigDecimal preco;
-    private Integer quantidade;
     private String sku;
 
     @Column(name = "criado_em",updatable = false)

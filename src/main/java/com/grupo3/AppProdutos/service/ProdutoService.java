@@ -1,5 +1,6 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
 import com.grupo3.AppProdutos.model.Estoque;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
@@ -28,10 +29,10 @@ public class ProdutoService {
     }
 
     @Transactional
-    public Produto salvarProduto(Produto produto){
-
-        validarProduto(produto);
-        validarQuantidade(produto.getQuantidade());
+    public Produto salvarProduto(CriarProdutoRequest request){
+        Produto produto = request.produto();
+        validarProduto(request.produto());
+        validarQuantidade(request.quantidade());
 
         if(produto.getAtivo() == null){
             produto.setAtivo(true);
@@ -46,7 +47,7 @@ public class ProdutoService {
         produto.setAtualizadoEm(LocalDateTime.now());
 
         Produto produtoSalvo = produtoRepository.save(produto);
-        Estoque estoque = estoqueService.criarEstoqueParaProduto(produtoSalvo, produto.getQuantidade());
+        Estoque estoque = estoqueService.criarEstoqueParaProduto(produtoSalvo, request.quantidade());
 
         return produtoSalvo;
 
