@@ -59,13 +59,13 @@ public class MovimentoEstoqueService {
 
     public List<MovimentoEstoque> listarMovimentosPorProdutoId(Long produtoId){
         Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
-        return estoqueMovimentoRepository.findByProduto(produto);
+        return estoqueMovimentoRepository.findByProduto_Id(produto.getId());
     }
 
 
     public void deletarMovimentoEstoquePorProdutoId(Long id){
-        var produtoParaDeletar = produtoConsultaService.buscarProdutoPorId(id);
-        estoqueMovimentoRepository.deleteByProduto(produtoParaDeletar);
+        var produto = produtoConsultaService.buscarProdutoPorId(id);
+        estoqueMovimentoRepository.deleteByProduto(produto);
     }
 
     private void validarQuantidade(Integer quantidade){

@@ -12,8 +12,7 @@ import java.util.List;
 @Repository
 public interface EstoqueMovimentoRepository extends JpaRepository<MovimentoEstoque, Long> {
 
-    List<MovimentoEstoque> findByProduto(Produto produto);
-
+    List<MovimentoEstoque> findByProduto_Id(Long produtoId);
 
     @Modifying
     @Query("""
