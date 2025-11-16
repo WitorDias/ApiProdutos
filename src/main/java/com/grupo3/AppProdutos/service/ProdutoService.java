@@ -1,6 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoRequest;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
 
@@ -19,12 +20,14 @@ public class ProdutoService {
     private final EstoqueService estoqueService;
     private final MovimentoEstoqueService movimentoEstoqueService;
     private final ProdutoConsultaService produtoConsultaService;
+    private final CategoriaService categoriaService;
 
-    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, MovimentoEstoqueService movimentoEstoqueService, ProdutoConsultaService produtoConsultaService) {
+    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, MovimentoEstoqueService movimentoEstoqueService, ProdutoConsultaService produtoConsultaService, CategoriaService categoriaService) {
         this.produtoRepository = produtoRepository;
         this.estoqueService = estoqueService;
         this.movimentoEstoqueService = movimentoEstoqueService;
         this.produtoConsultaService = produtoConsultaService;
+        this.categoriaService = categoriaService;
     }
 
     public List<Produto> buscarListaDeProdutos(){
@@ -33,21 +36,27 @@ public class ProdutoService {
 
     @Transactional
     public Produto salvarProduto(CriarProdutoRequest request){
-        Produto produto = request.produto();
-        validarProduto(request.produto());
+        ProdutoRequest produtoRequest = request.produto();
+        validarProdutoRequest(produtoRequest);
         validarQuantidade(request.quantidade());
 
-        if(produto.getAtivo() == null){
-            produto.setAtivo(true);
-        }
-
-        produtoRepository.findBySku(produto.getSku())
+        produtoRepository.findBySku(produtoRequest.sku())
                 .ifPresent(skuJaExiste -> {
                     throw new IllegalArgumentException("SKU já está em uso");
                 });
 
-        produto.setCriadoEm(LocalDateTime.now());
-        produto.setAtualizadoEm(LocalDateTime.now());
+        var categoria = categoriaService.buscarCategoriaPorId(produtoRequest.categoriaId());
+
+        Produto produto = Produto.builder()
+                .nome(produtoRequest.nome())
+                .descricao(produtoRequest.descricao())
+                .preco(produtoRequest.preco())
+                .sku(produtoRequest.sku())
+                .categoria(categoria)
+                .ativo(produtoRequest.ativo() != null ? produtoRequest.ativo() : true)
+                .criadoEm(LocalDateTime.now())
+                .atualizadoEm(LocalDateTime.now())
+                .build();
 
         Produto produtoSalvo = produtoRepository.save(produto);
         estoqueService.criarEstoqueParaProduto(produtoSalvo, request.quantidade());
@@ -85,6 +94,21 @@ public class ProdutoService {
         produtoRepository.delete(produto);
     }
 
+    private void validarProdutoRequest(ProdutoRequest produtoRequest){
+        if (produtoRequest.nome() == null || produtoRequest.nome().trim().isEmpty()) {
+            throw new IllegalArgumentException("Nome do produto não pode ser vazio");
+        }
+        if (produtoRequest.preco() == null || produtoRequest.preco().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Preço não pode ser nulo ou negativo");
+        }
+        if (produtoRequest.sku() == null || produtoRequest.sku().trim().isEmpty()) {
+            throw new IllegalArgumentException("SKU não pode ser vazio");
+        }
+        if (produtoRequest.categoriaId() == null) {
+            throw new IllegalArgumentException("Produto deve pertencer a uma categoria");
+        }
+    }
+
     public void validarProduto(Produto produto){
         if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
             throw new IllegalArgumentException("Nome do produto não pode ser vazio");
@@ -94,6 +118,9 @@ public class ProdutoService {
         }
         if (produto.getSku() == null || produto.getSku().trim().isEmpty()) {
             throw new IllegalArgumentException("SKU não pode ser vazio");
+        }
+        if (produto.getCategoria() == null) {
+            throw new IllegalArgumentException("Produto deve pertencer a uma categoria");
         }
 
     }

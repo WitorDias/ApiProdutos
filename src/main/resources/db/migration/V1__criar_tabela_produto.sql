@@ -4,6 +4,7 @@ CREATE TABLE produto (
     descricao TEXT,
     preco DECIMAL(19,2) NOT NULL,
     sku VARCHAR(50) NOT NULL UNIQUE,
+    categoria_id BIGINT,
     criado_em TIMESTAMP NOT NULL,
     atualizado_em TIMESTAMP NOT NULL,
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
