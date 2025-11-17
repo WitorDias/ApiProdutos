@@ -16,7 +16,7 @@ public class ProdutoConsultaService {
     }
 
     public Produto buscarProdutoPorId(Long id){
-        return produtoRepository.findProdutoById(id).orElseThrow(
+        return produtoRepository.findByIdAndAtivoTrue(id).orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Produto não encontrado")
         );
     }

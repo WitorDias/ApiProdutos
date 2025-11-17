@@ -28,7 +28,7 @@ public class ProdutoService {
     }
 
     public List<Produto> buscarListaDeProdutos(){
-        return produtoRepository.findAll();
+        return produtoRepository.findAllByAtivoTrue();
     }
 
     @Transactional
