@@ -24,7 +24,6 @@ public class MovimentoEstoqueController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(movimentoEstoqueService.registrarEntrada(request.produtoId(), request.quantidade()));
-
     }
 
     @PostMapping("/saida")
