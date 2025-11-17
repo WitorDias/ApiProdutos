@@ -80,9 +80,9 @@ public class ProdutoService {
     @Transactional
     public void deletarProduto(Long id){
         var produto = buscarProdutoPorId(id);
-        movimentoEstoqueService.deletarMovimentoEstoquePorProdutoId(id);
-        estoqueService.deletarEstoquePorProdutoId(id);
-        produtoRepository.delete(produto);
+        produto.setAtivo(false);
+        produto.setAtualizadoEm(LocalDateTime.now());
+        produtoRepository.save(produto);
     }
 
     public void validarProduto(Produto produto){
