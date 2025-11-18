@@ -70,17 +70,46 @@ public class ProdutoService {
     }
 
     @Transactional
+    public Produto atualizarProduto(Long id, ProdutoRequest request){
+        if (request.preco() == null || request.preco().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Preço não pode ser nulo ou negativo");
+        }
+        if (request.categoriaId() == null) {
+            throw new IllegalArgumentException("Produto deve pertencer a uma categoria");
+        }
+
+        var produtoParaAtualizar = buscarProdutoPorId(id);
+        var categoria = categoriaService.buscarCategoriaPorId(request.categoriaId());
+
+        produtoParaAtualizar.setNome(request.nome());
+        produtoParaAtualizar.setDescricao(request.descricao());
+        produtoParaAtualizar.setPreco(request.preco());
+        produtoParaAtualizar.setSku(request.sku());
+        produtoParaAtualizar.setCategoria(categoria);
+        produtoParaAtualizar.setAtivo(request.ativo() != null ? request.ativo() : produtoParaAtualizar.getAtivo());
+        produtoParaAtualizar.setAtualizadoEm(LocalDateTime.now());
+
+        return produtoRepository.save(produtoParaAtualizar);
+    }
+
+    @Transactional
     public Produto atualizarProduto(Produto produto){
 
-        validarProduto(produto);
-
         var produtoParaAtualizar = buscarProdutoPorId(produto.getId());
+
+        if (produto.getCategoria() != null && produto.getCategoria().getId() != null) {
+            var categoria = categoriaService.buscarCategoriaPorId(produto.getCategoria().getId());
+            produtoParaAtualizar.setCategoria(categoria);
+        }
+
         produtoParaAtualizar.setNome(produto.getNome());
         produtoParaAtualizar.setDescricao(produto.getDescricao());
         produtoParaAtualizar.setPreco(produto.getPreco());
         produtoParaAtualizar.setAtualizadoEm(LocalDateTime.now());
         produtoParaAtualizar.setSku(produto.getSku());
         produtoParaAtualizar.setAtivo(produto.getAtivo());
+
+        validarProduto(produtoParaAtualizar);
 
         return produtoRepository.save(produtoParaAtualizar);
 

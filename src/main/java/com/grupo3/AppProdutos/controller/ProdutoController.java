@@ -1,6 +1,7 @@
 package com.grupo3.AppProdutos.controller;
 
 import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoRequest;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.service.ProdutoService;
 import org.springframework.http.HttpStatus;
@@ -40,10 +41,11 @@ public class ProdutoController {
                 .body(produtoService.buscarProdutoPorId(id));
     }
 
-    @PutMapping
-    public ResponseEntity<Void> atualizarProduto(@RequestBody Produto produto){
-        produtoService.atualizarProduto(produto);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    @PutMapping("/{id}")
+    public ResponseEntity<Produto> atualizarProduto(@PathVariable Long id, @RequestBody ProdutoRequest request){
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(produtoService.atualizarProduto(id, request));
     }
 
     @DeleteMapping("/{id}")
