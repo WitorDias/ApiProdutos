@@ -51,10 +51,4 @@ public class Pedido {
         this.atualizadoEm = LocalDateTime.now();
     }
 
-    public void adicionarItem(ItemPedido item) {
-        item.setPedido(this);
-        this.itens.add(item);
-
-        this.valorTotal = this.valorTotal.add(item.getPrecoTotal());
-    }
 }

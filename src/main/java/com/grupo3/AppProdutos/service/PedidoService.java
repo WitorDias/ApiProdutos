@@ -6,10 +6,12 @@ import com.grupo3.AppProdutos.dto.PedidoResponse;
 import com.grupo3.AppProdutos.mapper.PedidoMapper;
 import com.grupo3.AppProdutos.model.ItemPedido;
 import com.grupo3.AppProdutos.model.Pedido;
+import com.grupo3.AppProdutos.model.StatusPedido;
 import com.grupo3.AppProdutos.repository.PedidoRepository;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
 import com.grupo3.AppProdutos.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,7 +29,7 @@ public class PedidoService {
         this.produtoRepository = produtoRepository;
     }
 
-
+    @Transactional
     public PedidoResponse criarPedido(PedidoRequest pedidoRequest){
 
         var usuario = usuarioRepository.findByIdAndAtivoTrue(pedidoRequest.usuarioId()).orElseThrow(
@@ -82,4 +84,25 @@ public class PedidoService {
                 .map(PedidoMapper::toResponse)
                 .toList();
     }
+
+    @Transactional
+    public PedidoResponse atualizarStatus(Long id, StatusPedido novoStatus) {
+
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
+
+        if (pedido.getStatus() == StatusPedido.CANCELADO) {
+            throw new RuntimeException("Pedido já está cancelado e não pode ser alterado.");
+        }
+
+        if (pedido.getStatus() == StatusPedido.FINALIZADO) {
+            throw new RuntimeException("Pedido já está finalizado e não pode ser alterado.");
+        }
+
+        pedido.setStatus(novoStatus);
+        pedidoRepository.save(pedido);
+
+        return PedidoMapper.toResponse(pedido);
+    }
+
 }

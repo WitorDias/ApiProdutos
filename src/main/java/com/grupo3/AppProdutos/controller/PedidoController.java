@@ -2,6 +2,7 @@ package com.grupo3.AppProdutos.controller;
 
 import com.grupo3.AppProdutos.dto.PedidoRequest;
 import com.grupo3.AppProdutos.dto.PedidoResponse;
+import com.grupo3.AppProdutos.model.StatusPedido;
 import com.grupo3.AppProdutos.service.PedidoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +39,27 @@ public class PedidoController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(pedidoService.buscarPedidoPorUsuario(usuarioId));
+    }
+
+    @PatchMapping("/{id}/confirmar")
+    public ResponseEntity<PedidoResponse> confirmar(@PathVariable Long id) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(pedidoService.atualizarStatus(id, StatusPedido.CONFIRMADO));
+    }
+
+    @PatchMapping("/{id}/cancelar")
+    public ResponseEntity<PedidoResponse> cancelar(@PathVariable Long id) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(pedidoService.atualizarStatus(id, StatusPedido.CANCELADO));
+    }
+
+    @PatchMapping("/{id}/finalizar")
+    public ResponseEntity<PedidoResponse> finalizar(@PathVariable Long id) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(pedidoService.atualizarStatus(id, StatusPedido.FINALIZADO));
     }
 
 }
