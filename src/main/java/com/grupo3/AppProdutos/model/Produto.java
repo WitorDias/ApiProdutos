@@ -1,5 +1,7 @@
 package com.grupo3.AppProdutos.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,6 +24,11 @@ public class Produto {
     private String descricao;
     private BigDecimal preco;
     private String sku;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id")
+    @JsonIdentityReference(alwaysAsId = true)
+    private Categoria categoria;
 
     @Column(name = "criado_em",updatable = false)
     private LocalDateTime criadoEm;

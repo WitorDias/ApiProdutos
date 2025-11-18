@@ -39,7 +39,7 @@ public class MovimentoEstoqueService {
         return estoqueMovimentoRepository.save(movimento);
 
     }
-
+    @Transactional
     public MovimentoEstoque registrarSaida(Long produtoId, Integer quantidade){
         validarQuantidade(quantidade);
         Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
@@ -70,8 +70,8 @@ public class MovimentoEstoqueService {
 
     private void validarQuantidade(Integer quantidade){
 
-        if(quantidade == null || quantidade < 0){
-            throw new IllegalArgumentException("A quantidade não pode ser nula ou menor que 0.");
+        if(quantidade == null || quantidade <= 0){
+            throw new IllegalArgumentException("A quantidade deve ser maior que 0.");
         }
 
     }
