@@ -1,5 +1,6 @@
 package com.grupo3.AppProdutos.model;
 
+import com.grupo3.AppProdutos.model.enums.TipoMovimento;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
+@Table(name = "movimentacoes_estoque")
 public class MovimentoEstoque {
 
     @Id

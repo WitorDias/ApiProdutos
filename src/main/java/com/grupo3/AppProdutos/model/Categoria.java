@@ -17,6 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
+@Table(name = "categorias")
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Categoria {
 

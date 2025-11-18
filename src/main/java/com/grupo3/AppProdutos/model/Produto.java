@@ -1,7 +1,6 @@
 package com.grupo3.AppProdutos.model;
 
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Entity
+@Table(name = "produtos")
 public class Produto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +26,7 @@ public class Produto {
     private String sku;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoria_id")
+    @JoinColumn(name = "categoria_id", nullable = false)
     @JsonIdentityReference(alwaysAsId = true)
     private Categoria categoria;
 
