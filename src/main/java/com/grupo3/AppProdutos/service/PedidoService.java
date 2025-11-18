@@ -4,9 +4,11 @@ import com.grupo3.AppProdutos.dto.ItemPedidoRequest;
 import com.grupo3.AppProdutos.dto.PedidoRequest;
 import com.grupo3.AppProdutos.dto.PedidoResponse;
 import com.grupo3.AppProdutos.mapper.PedidoMapper;
+import com.grupo3.AppProdutos.model.Estoque;
 import com.grupo3.AppProdutos.model.ItemPedido;
 import com.grupo3.AppProdutos.model.Pedido;
 import com.grupo3.AppProdutos.model.StatusPedido;
+import com.grupo3.AppProdutos.repository.EstoqueRepository;
 import com.grupo3.AppProdutos.repository.PedidoRepository;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
 import com.grupo3.AppProdutos.repository.UsuarioRepository;
@@ -22,11 +24,13 @@ public class PedidoService {
     private final PedidoRepository pedidoRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProdutoRepository produtoRepository;
+    private final MovimentoEstoqueService movimentoEstoqueService;
 
-    public PedidoService(PedidoRepository pedidoRepository, UsuarioRepository usuarioRepository, ProdutoRepository produtoRepository) {
+    public PedidoService(PedidoRepository pedidoRepository, UsuarioRepository usuarioRepository, ProdutoRepository produtoRepository, MovimentoEstoqueService movimentoEstoqueService) {
         this.pedidoRepository = pedidoRepository;
         this.usuarioRepository = usuarioRepository;
         this.produtoRepository = produtoRepository;
+        this.movimentoEstoqueService = movimentoEstoqueService;
     }
 
     @Transactional
@@ -99,10 +103,24 @@ public class PedidoService {
             throw new RuntimeException("Pedido já está finalizado e não pode ser alterado.");
         }
 
+        if (novoStatus == StatusPedido.CONFIRMADO) {
+            baixarEstoqueRegistrandoMovimentos(pedido);
+        }
+
         pedido.setStatus(novoStatus);
         pedidoRepository.save(pedido);
 
         return PedidoMapper.toResponse(pedido);
     }
 
+    private void baixarEstoqueRegistrandoMovimentos(Pedido pedido) {
+
+        for (ItemPedido item : pedido.getItens()) {
+
+            movimentoEstoqueService.registrarSaida(
+                    item.getProduto().getId(),
+                    item.getQuantidade()
+            );
+        }
+    }
 }
