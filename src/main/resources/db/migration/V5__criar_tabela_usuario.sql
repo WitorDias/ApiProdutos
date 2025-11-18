@@ -1,0 +1,9 @@
+CREATE TABLE tb_usuario (
+    usuario_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    senha VARCHAR(255) NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMP NOT NULL,
+    atualizado_em TIMESTAMP NOT NULL
+);
