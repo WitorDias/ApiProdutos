@@ -1,7 +1,7 @@
 package com.grupo3.AppProdutos.controller;
 
-import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
-import com.grupo3.AppProdutos.dto.ProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.CriarProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoRequest;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.service.ProdutoService;
 import org.springframework.http.HttpStatus;

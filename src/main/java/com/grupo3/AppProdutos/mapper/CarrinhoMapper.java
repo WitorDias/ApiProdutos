@@ -1,7 +1,7 @@
 package com.grupo3.AppProdutos.mapper;
 
-import com.grupo3.AppProdutos.dto.CarrinhoResponse;
-import com.grupo3.AppProdutos.dto.ItemCarrinhoResponse;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.CarrinhoResponse;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.ItemCarrinhoResponse;
 import com.grupo3.AppProdutos.model.Carrinho;
 import com.grupo3.AppProdutos.model.ItemCarrinho;
 import org.springframework.stereotype.Component;

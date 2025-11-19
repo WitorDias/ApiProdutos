@@ -1,7 +1,8 @@
 package com.grupo3.AppProdutos.controller;
 
-import com.grupo3.AppProdutos.dto.UsuarioRequest;
-import com.grupo3.AppProdutos.dto.UsuarioResponse;
+import com.grupo3.AppProdutos.dto.UsuarioDTO.AtualizarUsuarioRequest;
+import com.grupo3.AppProdutos.dto.UsuarioDTO.UsuarioRequest;
+import com.grupo3.AppProdutos.dto.UsuarioDTO.UsuarioResponse;
 import com.grupo3.AppProdutos.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

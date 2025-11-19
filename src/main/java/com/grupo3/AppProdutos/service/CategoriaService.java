@@ -1,7 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
-import com.grupo3.AppProdutos.dto.AtualizarCategoriaRequest;
-import com.grupo3.AppProdutos.dto.CriarCategoriaRequest;
+import com.grupo3.AppProdutos.dto.CategoriaDTO.AtualizarCategoriaRequest;
+import com.grupo3.AppProdutos.dto.CategoriaDTO.CriarCategoriaRequest;
 import com.grupo3.AppProdutos.model.Categoria;
 import com.grupo3.AppProdutos.repository.CategoriaRepository;
 import org.springframework.stereotype.Service;

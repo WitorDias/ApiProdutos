@@ -1,7 +1,7 @@
 package com.grupo3.AppProdutos.controller;
 
-import com.grupo3.AppProdutos.dto.PedidoRequest;
-import com.grupo3.AppProdutos.dto.PedidoResponse;
+import com.grupo3.AppProdutos.dto.PedidoDTO.CriarPedidoRequest;
+import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoResponse;
 import com.grupo3.AppProdutos.model.enums.StatusPedido;
 import com.grupo3.AppProdutos.service.PedidoService;
 import org.springframework.http.HttpStatus;

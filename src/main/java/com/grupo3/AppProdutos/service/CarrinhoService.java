@@ -1,8 +1,8 @@
 package com.grupo3.AppProdutos.service;
 
-import com.grupo3.AppProdutos.dto.AdicionarItemCarrinhoRequest;
-import com.grupo3.AppProdutos.dto.AtualizarItemCarrinhoRequest;
-import com.grupo3.AppProdutos.dto.CarrinhoResponse;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.AdicionarItemCarrinhoRequest;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.AtualizarItemCarrinhoRequest;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.CarrinhoResponse;
 import com.grupo3.AppProdutos.mapper.CarrinhoMapper;
 import com.grupo3.AppProdutos.model.*;
 import com.grupo3.AppProdutos.model.enums.StatusCarrinho;

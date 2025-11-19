@@ -1,7 +1,7 @@
 package com.grupo3.AppProdutos.mapper;
 
-import com.grupo3.AppProdutos.dto.UsuarioRequest;
-import com.grupo3.AppProdutos.dto.UsuarioResponse;
+import com.grupo3.AppProdutos.dto.UsuarioDTO.CriarUsuarioRequest;
+import com.grupo3.AppProdutos.dto.UsuarioDTO.UsuarioResponse;
 import com.grupo3.AppProdutos.model.Usuario;
 
 public class UsuarioMapper {

@@ -1,8 +1,8 @@
 package com.grupo3.AppProdutos.controller;
 
-import com.grupo3.AppProdutos.dto.AdicionarItemCarrinhoRequest;
-import com.grupo3.AppProdutos.dto.AtualizarItemCarrinhoRequest;
-import com.grupo3.AppProdutos.dto.CarrinhoResponse;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.AdicionarItemCarrinhoRequest;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.AtualizarItemCarrinhoRequest;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.CarrinhoResponse;
 import com.grupo3.AppProdutos.service.CarrinhoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
