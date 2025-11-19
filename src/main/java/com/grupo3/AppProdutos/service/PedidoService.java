@@ -6,7 +6,7 @@ import com.grupo3.AppProdutos.dto.PedidoResponse;
 import com.grupo3.AppProdutos.mapper.PedidoMapper;
 import com.grupo3.AppProdutos.model.ItemPedido;
 import com.grupo3.AppProdutos.model.Pedido;
-import com.grupo3.AppProdutos.model.StatusPedido;
+import com.grupo3.AppProdutos.model.enums.StatusPedido;
 import com.grupo3.AppProdutos.repository.PedidoRepository;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
 import com.grupo3.AppProdutos.repository.UsuarioRepository;

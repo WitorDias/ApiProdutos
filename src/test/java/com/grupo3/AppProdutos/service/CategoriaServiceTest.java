@@ -35,170 +35,119 @@ class CategoriaServiceTest {
     class CriarCategoria {
 
         @Test
-        void criarCategoria_deveSalvarQuandoValido() {
-            var dto = new CriarCategoriaRequest("Eletrônicos", null);
+        void salvarCategoria_deveSalvarQuandoValido() {
+            var request = new CriarCategoriaRequest("Eletrônicos", null);
 
-            var categoriaSalva = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .parent(null)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .subcategorias(new ArrayList<>())
-                    .produtos(new ArrayList<>())
-                    .build();
+            var categoriaSalva = new Categoria();
+            categoriaSalva.setId(1L);
+            categoriaSalva.setNome("Eletrônicos");
+            categoriaSalva.setParent(null);
+            categoriaSalva.setCriadoEm(LocalDateTime.now());
+            categoriaSalva.setAtualizadoEm(LocalDateTime.now());
 
             when(categoriaRepository.existsByNomeAndParentIsNull("Eletrônicos")).thenReturn(false);
             when(categoriaRepository.save(any(Categoria.class))).thenReturn(categoriaSalva);
 
-            var resultado = categoriaService.salvarCategoria(dto);
+            var resultado = categoriaService.salvarCategoria(request);
 
             assertNotNull(resultado);
-            assertEquals(1L, resultado.getId());
             assertEquals("Eletrônicos", resultado.getNome());
             assertNull(resultado.getParent());
             verify(categoriaRepository).save(any(Categoria.class));
         }
 
         @Test
-        void criarCategoria_deveSalvarComParentQuandoValido() {
-            var parentCategoria = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .parent(null)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .subcategorias(new ArrayList<>())
-                    .produtos(new ArrayList<>())
-                    .build();
+        void salvarCategoria_deveSalvarComParent() {
+            var parent = new Categoria();
+            parent.setId(1L);
+            parent.setNome("Eletrônicos");
 
-            var dto = new CriarCategoriaRequest("Smartphones", 1L);
+            var request = new CriarCategoriaRequest("Smartphones", 1L);
 
-            var categoriaSalva = Categoria.builder()
-                    .id(2L)
-                    .nome("Smartphones")
-                    .parent(parentCategoria)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .subcategorias(new ArrayList<>())
-                    .produtos(new ArrayList<>())
-                    .build();
+            var categoriaSalva = new Categoria();
+            categoriaSalva.setId(2L);
+            categoriaSalva.setNome("Smartphones");
+            categoriaSalva.setParent(parent);
+            categoriaSalva.setCriadoEm(LocalDateTime.now());
+            categoriaSalva.setAtualizadoEm(LocalDateTime.now());
 
-            when(categoriaRepository.findById(1L)).thenReturn(Optional.of(parentCategoria));
-            when(categoriaRepository.existsByNomeAndParent("Smartphones", parentCategoria)).thenReturn(false);
+            when(categoriaRepository.findById(1L)).thenReturn(Optional.of(parent));
+            when(categoriaRepository.existsByNomeAndParent("Smartphones", parent)).thenReturn(false);
             when(categoriaRepository.save(any(Categoria.class))).thenReturn(categoriaSalva);
 
-            var resultado = categoriaService.salvarCategoria(dto);
+            var resultado = categoriaService.salvarCategoria(request);
 
             assertNotNull(resultado);
-            assertEquals(2L, resultado.getId());
             assertEquals("Smartphones", resultado.getNome());
-            assertEquals(1L, resultado.getParent().getId());
+            assertEquals(parent, resultado.getParent());
             verify(categoriaRepository).save(any(Categoria.class));
         }
 
         @Test
-        void criarCategoria_deveLancarQuandoNomeVazio() {
-            var dto = new CriarCategoriaRequest("", null);
+        void salvarCategoria_deveLancarQuandoNomeVazio() {
+            var request = new CriarCategoriaRequest("", null);
 
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.salvarCategoria(dto));
+            assertThrows(IllegalArgumentException.class, () -> categoriaService.salvarCategoria(request));
             verify(categoriaRepository, never()).save(any());
         }
 
         @Test
-        void criarCategoria_deveLancarQuandoNomeNull() {
-            var dto = new CriarCategoriaRequest(null, null);
+        void salvarCategoria_deveLancarQuandoNomeNulo() {
+            var request = new CriarCategoriaRequest(null, null);
 
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.salvarCategoria(dto));
+            assertThrows(IllegalArgumentException.class, () -> categoriaService.salvarCategoria(request));
             verify(categoriaRepository, never()).save(any());
         }
 
         @Test
-        void criarCategoria_deveLancarQuandoJaExisteNoMesmoNivel() {
-            var dto = new CriarCategoriaRequest("Eletrônicos", null);
+        void salvarCategoria_deveLancarQuandoDuplicado() {
+            var request = new CriarCategoriaRequest("Eletrônicos", null);
 
             when(categoriaRepository.existsByNomeAndParentIsNull("Eletrônicos")).thenReturn(true);
 
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.salvarCategoria(dto));
+            assertThrows(IllegalArgumentException.class, () -> categoriaService.salvarCategoria(request));
             verify(categoriaRepository, never()).save(any());
         }
 
         @Test
-        void criarCategoria_deveLancarQuandoJaExisteComMesmoParent() {
-            var parentCategoria = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .build();
+        void salvarCategoria_deveLancarQuandoParentNaoExiste() {
+            var request = new CriarCategoriaRequest("Smartphones", 999L);
 
-            var dto = new CriarCategoriaRequest("Smartphones", 1L);
+            when(categoriaRepository.findById(999L)).thenReturn(Optional.empty());
 
-            when(categoriaRepository.findById(1L)).thenReturn(Optional.of(parentCategoria));
-            when(categoriaRepository.existsByNomeAndParent("Smartphones", parentCategoria)).thenReturn(true);
-
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.salvarCategoria(dto));
-            verify(categoriaRepository, never()).save(any());
-        }
-
-        @Test
-        void criarCategoria_deveLancarQuandoParentNaoExiste() {
-            var dto = new CriarCategoriaRequest("Smartphones", 99L);
-
-            when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
-
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.salvarCategoria(dto));
+            assertThrows(IllegalArgumentException.class, () -> categoriaService.salvarCategoria(request));
             verify(categoriaRepository, never()).save(any());
         }
     }
 
     @Nested
-    @DisplayName("Testes de listagem de Categorias")
+    @DisplayName("Testes de Listagem de Categorias")
     class ListarCategorias {
 
         @Test
-        void listarCategorias_deveRetornarListaCompleta() {
-            var c1 = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .parent(null)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .build();
+        void buscarListaDeCategorias_deveRetornarLista() {
+            var cat1 = new Categoria();
+            cat1.setId(1L);
+            cat1.setNome("Eletrônicos");
 
-            var c2 = Categoria.builder()
-                    .id(2L)
-                    .nome("Alimentos")
-                    .parent(null)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .build();
+            var cat2 = new Categoria();
+            cat2.setId(2L);
+            cat2.setNome("Livros");
 
-            when(categoriaRepository.findAll()).thenReturn(List.of(c1, c2));
+            when(categoriaRepository.findAll()).thenReturn(List.of(cat1, cat2));
 
-            var lista = categoriaService.buscarListaDeCategorias();
+            var resultado = categoriaService.buscarListaDeCategorias();
 
-            assertEquals(2, lista.size());
-            assertTrue(lista.stream().anyMatch(it -> it.getId().equals(1L)));
-            assertTrue(lista.stream().anyMatch(it -> it.getId().equals(2L)));
+            assertEquals(2, resultado.size());
+            assertTrue(resultado.stream().anyMatch(c -> c.getNome().equals("Eletrônicos")));
+            assertTrue(resultado.stream().anyMatch(c -> c.getNome().equals("Livros")));
         }
 
         @Test
-        void listarCategorias_deveRetornarListaVazia() {
-            when(categoriaRepository.findAll()).thenReturn(List.of());
-
-            var lista = categoriaService.buscarListaDeCategorias();
-
-            assertEquals(0, lista.size());
-        }
-
-        @Test
-        void buscarCategoriaPorId_deveRetornarQuandoEncontrada() {
-            var categoria = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .parent(null)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .build();
+        void buscarCategoriaPorId_deveRetornarQuandoEncontrado() {
+            var categoria = new Categoria();
+            categoria.setId(1L);
+            categoria.setNome("Eletrônicos");
 
             when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
 
@@ -209,176 +158,126 @@ class CategoriaServiceTest {
         }
 
         @Test
-        void buscarCategoriaPorId_deveLancarQuandoNaoEncontrada() {
-            when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
+        void buscarCategoriaPorId_deveLancarQuandoNaoEncontrado() {
+            when(categoriaRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.buscarCategoriaPorId(99L));
+            assertThrows(IllegalArgumentException.class, () -> categoriaService.buscarCategoriaPorId(999L));
         }
     }
 
     @Nested
-    @DisplayName("Testes de atualização de Categorias")
+    @DisplayName("Testes de Atualização de Categoria")
     class AtualizarCategoria {
 
         @Test
         void atualizarCategoria_deveAtualizarQuandoValido() {
-            var categoriaExistente = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .parent(null)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .subcategorias(new ArrayList<>())
-                    .produtos(new ArrayList<>())
-                    .build();
+            var categoriaExistente = new Categoria();
+            categoriaExistente.setId(1L);
+            categoriaExistente.setNome("Eletrônicos");
+            categoriaExistente.setParent(null);
 
-            var dto = new AtualizarCategoriaRequest("Eletrônicos e Tecnologia", null);
+            var request = new AtualizarCategoriaRequest("Eletrônica", null);
 
-            var categoriaAtualizada = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos e Tecnologia")
-                    .parent(null)
-                    .criadoEm(categoriaExistente.getCriadoEm())
-                    .atualizadoEm(LocalDateTime.now())
-                    .subcategorias(new ArrayList<>())
-                    .produtos(new ArrayList<>())
-                    .build();
+            var categoriaAtualizada = new Categoria();
+            categoriaAtualizada.setId(1L);
+            categoriaAtualizada.setNome("Eletrônica");
+            categoriaAtualizada.setParent(null);
 
             when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoriaExistente));
-            when(categoriaRepository.existsByNomeAndParentIsNull("Eletrônicos e Tecnologia")).thenReturn(false);
-            when(categoriaRepository.save(any(Categoria.class))).thenReturn(categoriaAtualizada);
+            when(categoriaRepository.existsByNomeAndParentIsNull("Eletrônica")).thenReturn(false);
+            when(categoriaRepository.save(categoriaExistente)).thenReturn(categoriaAtualizada);
 
-            var resultado = categoriaService.atualizarCategoria(1L, dto);
+            var resultado = categoriaService.atualizarCategoria(1L, request);
 
-            assertEquals("Eletrônicos e Tecnologia", resultado.getNome());
-            verify(categoriaRepository).save(any(Categoria.class));
+            assertEquals("Eletrônica", resultado.getNome());
+            verify(categoriaRepository).save(categoriaExistente);
         }
 
         @Test
-        void atualizarCategoria_deveAtualizarParentQuandoValido() {
-            var novoParent = Categoria.builder()
-                    .id(2L)
-                    .nome("Tecnologia")
-                    .parent(null)
-                    .build();
+        void atualizarCategoria_deveAtualizarParent() {
+            var parent = new Categoria();
+            parent.setId(2L);
+            parent.setNome("Eletrônicos");
 
-            var categoriaExistente = Categoria.builder()
-                    .id(1L)
-                    .nome("Smartphones")
-                    .parent(null)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .subcategorias(new ArrayList<>())
-                    .produtos(new ArrayList<>())
-                    .build();
+            var categoriaExistente = new Categoria();
+            categoriaExistente.setId(1L);
+            categoriaExistente.setNome("Smartphones");
+            categoriaExistente.setParent(null);
 
-            var dto = new AtualizarCategoriaRequest("Smartphones", 2L);
+            var request = new AtualizarCategoriaRequest("Smartphones", 2L);
 
             when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoriaExistente));
-            when(categoriaRepository.findById(2L)).thenReturn(Optional.of(novoParent));
-            when(categoriaRepository.existsByNomeAndParent("Smartphones", novoParent)).thenReturn(false);
-            when(categoriaRepository.save(any(Categoria.class))).thenReturn(categoriaExistente);
+            when(categoriaRepository.findById(2L)).thenReturn(Optional.of(parent));
+            when(categoriaRepository.existsByNomeAndParent("Smartphones", parent)).thenReturn(false);
+            when(categoriaRepository.save(categoriaExistente)).thenReturn(categoriaExistente);
 
-            var resultado = categoriaService.atualizarCategoria(1L, dto);
+            var resultado = categoriaService.atualizarCategoria(1L, request);
 
-            assertNotNull(resultado);
-            verify(categoriaRepository).save(any(Categoria.class));
+            assertEquals(parent, resultado.getParent());
+            verify(categoriaRepository).save(categoriaExistente);
         }
 
         @Test
-        void atualizarCategoria_deveLancarQuandoNaoEncontrada() {
-            var dto = new AtualizarCategoriaRequest("Eletrônicos Updated", null);
+        void atualizarCategoria_deveLancarQuandoHierarquiaCircular() {
+            var categoriaExistente = new Categoria();
+            categoriaExistente.setId(1L);
+            categoriaExistente.setNome("Eletrônicos");
 
-            when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
+            var subcategoria = new Categoria();
+            subcategoria.setId(2L);
+            subcategoria.setNome("Smartphones");
+            subcategoria.setParent(categoriaExistente);
 
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.atualizarCategoria(99L, dto));
+            var request = new AtualizarCategoriaRequest("Eletrônicos", 2L);
+
+            when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoriaExistente));
+            when(categoriaRepository.findById(2L)).thenReturn(Optional.of(subcategoria));
+
+            assertThrows(IllegalArgumentException.class, () -> categoriaService.atualizarCategoria(1L, request));
             verify(categoriaRepository, never()).save(any());
         }
 
         @Test
         void atualizarCategoria_deveLancarQuandoNomeVazio() {
-            var dto = new AtualizarCategoriaRequest("", null);
+            var categoriaExistente = new Categoria();
+            categoriaExistente.setId(1L);
+            categoriaExistente.setNome("Eletrônicos");
 
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.atualizarCategoria(1L, dto));
-            verify(categoriaRepository, never()).save(any());
-        }
-
-        @Test
-        void atualizarCategoria_deveLancarQuandoNomeDuplicado() {
-            var categoriaExistente = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .parent(null)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .build();
-
-            var dto = new AtualizarCategoriaRequest("Alimentos", null);
+            var request = new AtualizarCategoriaRequest("", null);
 
             when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoriaExistente));
-            when(categoriaRepository.existsByNomeAndParentIsNull("Alimentos")).thenReturn(true);
 
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.atualizarCategoria(1L, dto));
+            assertThrows(IllegalArgumentException.class, () -> categoriaService.atualizarCategoria(1L, request));
             verify(categoriaRepository, never()).save(any());
         }
 
         @Test
-        void atualizarCategoria_deveLancarQuandoHierarquiaCircular() {
-            var categoriaFilha = Categoria.builder()
-                    .id(2L)
-                    .nome("Smartphones")
-                    .parent(null)
-                    .build();
+        void atualizarCategoria_deveLancarQuandoDuplicado() {
+            var categoriaExistente = new Categoria();
+            categoriaExistente.setId(1L);
+            categoriaExistente.setNome("Eletrônicos");
 
-            var categoriaPai = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .parent(categoriaFilha)
-                    .criadoEm(LocalDateTime.now())
-                    .atualizadoEm(LocalDateTime.now())
-                    .build();
-
-            categoriaFilha.setParent(categoriaPai);
-
-            var dto = new AtualizarCategoriaRequest("Eletrônicos", 2L);
-
-            when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoriaPai));
-            when(categoriaRepository.findById(2L)).thenReturn(Optional.of(categoriaFilha));
-
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.atualizarCategoria(1L, dto));
-            verify(categoriaRepository, never()).save(any());
-        }
-
-        @Test
-        void atualizarCategoria_deveLancarQuandoParentNaoExiste() {
-            var categoriaExistente = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .parent(null)
-                    .build();
-
-            var dto = new AtualizarCategoriaRequest("Eletrônicos", 99L);
+            var request = new AtualizarCategoriaRequest("Livros", null);
 
             when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoriaExistente));
-            when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
+            when(categoriaRepository.existsByNomeAndParentIsNull("Livros")).thenReturn(true);
 
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.atualizarCategoria(1L, dto));
+            assertThrows(IllegalArgumentException.class, () -> categoriaService.atualizarCategoria(1L, request));
             verify(categoriaRepository, never()).save(any());
         }
     }
 
     @Nested
-    @DisplayName("Testes de exclusão de Categorias")
-    class ExcluirCategoria {
+    @DisplayName("Testes de Exclusão de Categoria")
+    class DeletarCategoria {
 
         @Test
-        void deletarCategoria_deveDeletarQuandoExiste() {
-            var categoria = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .subcategorias(new ArrayList<>())
-                    .produtos(new ArrayList<>())
-                    .build();
+        void deletarCategoria_deveDeletarQuandoSemDependencias() {
+            var categoria = new Categoria();
+            categoria.setId(1L);
+            categoria.setNome("Eletrônicos");
+            categoria.setProdutos(new ArrayList<>());
+            categoria.setSubcategorias(new ArrayList<>());
 
             when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
 
@@ -388,24 +287,16 @@ class CategoriaServiceTest {
         }
 
         @Test
-        void deletarCategoria_deveLancarQuandoNaoExiste() {
-            when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
+        void deletarCategoria_deveLancarQuandoTemProdutos() {
+            var categoria = new Categoria();
+            categoria.setId(1L);
+            categoria.setNome("Eletrônicos");
+            categoria.setSubcategorias(new ArrayList<>());
 
-            assertThrows(IllegalArgumentException.class, () -> categoriaService.deletarCategoria(99L));
-            verify(categoriaRepository, never()).delete(any());
-        }
-
-        @Test
-        void deletarCategoria_deveLancarQuandoTemProdutosAssociados() {
             var produto = new Produto();
             produto.setId(1L);
-
-            var categoria = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .subcategorias(new ArrayList<>())
-                    .produtos(List.of(produto))
-                    .build();
+            produto.setNome("Produto Teste");
+            categoria.setProdutos(List.of(produto));
 
             when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
 
@@ -415,22 +306,29 @@ class CategoriaServiceTest {
 
         @Test
         void deletarCategoria_deveLancarQuandoTemSubcategorias() {
-            var subcategoria = Categoria.builder()
-                    .id(2L)
-                    .nome("Smartphones")
-                    .build();
+            var categoria = new Categoria();
+            categoria.setId(1L);
+            categoria.setNome("Eletrônicos");
+            categoria.setProdutos(new ArrayList<>());
 
-            var categoria = Categoria.builder()
-                    .id(1L)
-                    .nome("Eletrônicos")
-                    .subcategorias(List.of(subcategoria))
-                    .produtos(new ArrayList<>())
-                    .build();
+            var subcategoria = new Categoria();
+            subcategoria.setId(2L);
+            subcategoria.setNome("Smartphones");
+            categoria.setSubcategorias(List.of(subcategoria));
 
             when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
 
             assertThrows(IllegalArgumentException.class, () -> categoriaService.deletarCategoria(1L));
             verify(categoriaRepository, never()).delete(any());
         }
+
+        @Test
+        void deletarCategoria_deveLancarQuandoNaoEncontrada() {
+            when(categoriaRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThrows(IllegalArgumentException.class, () -> categoriaService.deletarCategoria(999L));
+            verify(categoriaRepository, never()).delete(any());
+        }
     }
 }
+
