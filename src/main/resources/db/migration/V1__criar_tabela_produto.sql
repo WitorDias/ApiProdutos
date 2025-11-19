@@ -1,4 +1,4 @@
-CREATE TABLE produtos (
+CREATE TABLE tb_produto (
     produto_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(255) NOT NULL,
     descricao TEXT,
@@ -10,4 +10,4 @@ CREATE TABLE produtos (
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT chk_preco_nao_negativo CHECK (preco >= 0)
 );
-CREATE INDEX idx_produto_sku ON produtos(sku);
+CREATE INDEX idx_produto_sku ON tb_produto(sku);

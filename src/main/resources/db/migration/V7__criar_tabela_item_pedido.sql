@@ -10,5 +10,5 @@ CREATE TABLE tb_item_pedido (
         REFERENCES tb_pedido(id),
 
     CONSTRAINT fk_item_produto FOREIGN KEY (produto_id)
-        REFERENCES produto(produto_id)
+        REFERENCES tb_produto(produto_id)
 );

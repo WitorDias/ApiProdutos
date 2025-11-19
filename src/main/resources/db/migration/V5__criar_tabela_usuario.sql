@@ -1,4 +1,4 @@
-CREATE TABLE tb_usuarios (
+CREATE TABLE tb_usuario (
     usuario_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
