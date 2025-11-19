@@ -1,5 +1,6 @@
 package com.grupo3.AppProdutos.model;
 
+import com.grupo3.AppProdutos.model.enums.StatusPedido;
 import jakarta.persistence.*;
 import lombok.*;
 

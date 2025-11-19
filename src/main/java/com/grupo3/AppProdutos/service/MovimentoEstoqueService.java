@@ -3,7 +3,7 @@ package com.grupo3.AppProdutos.service;
 import com.grupo3.AppProdutos.model.Estoque;
 import com.grupo3.AppProdutos.model.MovimentoEstoque;
 import com.grupo3.AppProdutos.model.Produto;
-import com.grupo3.AppProdutos.model.TipoMovimento;
+import com.grupo3.AppProdutos.model.enums.TipoMovimento;
 import com.grupo3.AppProdutos.repository.EstoqueMovimentoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
