@@ -1,5 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.exception.EstoqueNaoEncontradoException;
+import com.grupo3.AppProdutos.exception.QuantidadeEstoqueInvalidaException;
 import com.grupo3.AppProdutos.model.Estoque;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.EstoqueRepository;
@@ -39,7 +41,7 @@ public class EstoqueService {
         Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
 
         return estoqueRepository.findByProduto(produto).orElseThrow(
-                () -> new RuntimeException("Estoque não encontrado para este produto.")
+                () -> new EstoqueNaoEncontradoException(produtoId)
         );
 
     }
@@ -54,16 +56,10 @@ public class EstoqueService {
         return estoqueRepository.save(estoque);
     }
 
-    public void deletarEstoquePorProdutoId(Long produtoId){
-
-        var produto = produtoConsultaService.buscarProdutoPorId(produtoId);
-        estoqueRepository.deleteByProdutoId(produto.getId());
-    }
-
     private void validarQuantidade(Integer quantidade){
 
         if(quantidade == null || quantidade < 0){
-            throw new IllegalArgumentException("A quantidade não pode ser nula ou menor que 0.");
+            throw new QuantidadeEstoqueInvalidaException();
         }
 
     }

@@ -1,10 +1,10 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.exception.ProdutoNaoEncontradoException;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+
 
 @Service
 public class ProdutoConsultaService {
@@ -17,7 +17,7 @@ public class ProdutoConsultaService {
 
     public Produto buscarProdutoPorId(Long id){
         return produtoRepository.findByIdAndAtivoTrue(id).orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Produto não encontrado")
+                () -> new ProdutoNaoEncontradoException(id)
         );
     }
 }

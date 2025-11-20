@@ -2,6 +2,9 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.dto.UsuarioRequest;
 import com.grupo3.AppProdutos.dto.UsuarioResponse;
+import com.grupo3.AppProdutos.exception.EmailJaExisteException;
+import com.grupo3.AppProdutos.exception.NomeUsuarioJaExisteException;
+import com.grupo3.AppProdutos.exception.UsuarioNaoEncontradoException;
 import com.grupo3.AppProdutos.mapper.UsuarioMapper;
 import com.grupo3.AppProdutos.model.Usuario;
 import com.grupo3.AppProdutos.repository.UsuarioRepository;
@@ -29,7 +32,7 @@ public class UsuarioService {
 
     public UsuarioResponse buscarUsuarioPorId(Long id){
         var usuario = usuarioRepository.findByIdAndAtivoTrue(id).orElseThrow(
-                () -> new RuntimeException("Usuário não encontrado.")
+                () -> new UsuarioNaoEncontradoException(id)
         );
         return UsuarioMapper.toResponse(usuario);
     }
@@ -37,7 +40,7 @@ public class UsuarioService {
     @Transactional
     public void deletarUsuario(Long id){
         var usuario = usuarioRepository.findByIdAndAtivoTrue(id).orElseThrow(
-                () -> new RuntimeException("usuario não encontrado")
+                () -> new UsuarioNaoEncontradoException(id)
         );
         usuario.setAtivo(false);
         usuarioRepository.save(usuario);
@@ -45,10 +48,10 @@ public class UsuarioService {
 
     public void validarUsuario(UsuarioRequest usuarioRequest){
         if(usuarioRepository.existsByNome(usuarioRequest.nome())){
-            throw new RuntimeException("Este usuário já está em uso");
+            throw new NomeUsuarioJaExisteException(usuarioRequest.nome());
         }
         if(usuarioRepository.existsByEmail(usuarioRequest.email())){
-            throw new RuntimeException("Este email já está em uso");
+            throw new EmailJaExisteException(usuarioRequest.email());
         }
     }
 }
