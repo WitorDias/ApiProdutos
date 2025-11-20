@@ -1,11 +1,11 @@
 package com.grupo3.AppProdutos.exception;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
 @SuperBuilder
 public class CamposPersonalizadosException {
 
