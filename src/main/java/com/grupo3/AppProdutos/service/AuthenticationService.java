@@ -3,6 +3,8 @@ package com.grupo3.AppProdutos.service;
 import com.grupo3.AppProdutos.dto.AutenticacaoDTO.AuthenticationRequest;
 import com.grupo3.AppProdutos.dto.AutenticacaoDTO.LoginResponse;
 import com.grupo3.AppProdutos.dto.AutenticacaoDTO.UsuarioAutenticadoResponse;
+import com.grupo3.AppProdutos.exception.UsuarioNaoAutenticadoException;
+import com.grupo3.AppProdutos.exception.UsuarioNaoEncontradoException;
 import com.grupo3.AppProdutos.model.Usuario;
 import com.grupo3.AppProdutos.repository.UsuarioRepository;
 import jakarta.validation.Valid;
@@ -50,7 +52,7 @@ public class AuthenticationService {
         Usuario usuario = usuarioRepository.findByEmail(login);
 
         if (usuario == null) {
-            throw new RuntimeException("Usuário não encontrado");
+            throw new UsuarioNaoEncontradoException(null);
         }
 
         var token = tokenService.gerarToken(usuario);
@@ -68,7 +70,7 @@ public class AuthenticationService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("Usuário não autenticado");
+            throw new UsuarioNaoAutenticadoException();
         }
 
         Usuario usuario = (Usuario) authentication.getPrincipal();
