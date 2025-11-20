@@ -2,6 +2,8 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
 import com.grupo3.AppProdutos.dto.ProdutoRequest;
+import com.grupo3.AppProdutos.exception.SkuJaExisteException;
+import com.grupo3.AppProdutos.exception.ValidacaoProdutoException;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
 
@@ -18,14 +20,12 @@ public class ProdutoService {
 
     private final ProdutoRepository produtoRepository;
     private final EstoqueService estoqueService;
-    private final MovimentoEstoqueService movimentoEstoqueService;
     private final ProdutoConsultaService produtoConsultaService;
     private final CategoriaService categoriaService;
 
-    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, MovimentoEstoqueService movimentoEstoqueService, ProdutoConsultaService produtoConsultaService, CategoriaService categoriaService) {
+    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, ProdutoConsultaService produtoConsultaService, CategoriaService categoriaService) {
         this.produtoRepository = produtoRepository;
         this.estoqueService = estoqueService;
-        this.movimentoEstoqueService = movimentoEstoqueService;
         this.produtoConsultaService = produtoConsultaService;
         this.categoriaService = categoriaService;
     }
@@ -42,7 +42,7 @@ public class ProdutoService {
 
         produtoRepository.findBySku(produtoRequest.sku())
                 .ifPresent(skuJaExiste -> {
-                    throw new IllegalArgumentException("SKU já está em uso");
+                    throw new SkuJaExisteException();
                 });
 
         var categoria = categoriaService.buscarCategoriaPorId(produtoRequest.categoriaId());
@@ -72,10 +72,10 @@ public class ProdutoService {
     @Transactional
     public Produto atualizarProduto(Long id, ProdutoRequest request){
         if (request.preco() == null || request.preco().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Preço não pode ser nulo ou negativo");
+            throw new ValidacaoProdutoException("Preço não pode ser nulo ou negativo");
         }
         if (request.categoriaId() == null) {
-            throw new IllegalArgumentException("Produto deve pertencer a uma categoria");
+            throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
         }
 
         var produtoParaAtualizar = buscarProdutoPorId(id);
@@ -125,39 +125,39 @@ public class ProdutoService {
 
     private void validarProdutoRequest(ProdutoRequest produtoRequest){
         if (produtoRequest.nome() == null || produtoRequest.nome().trim().isEmpty()) {
-            throw new IllegalArgumentException("Nome do produto não pode ser vazio");
+            throw new ValidacaoProdutoException("Nome do produto não pode ser vazio");
         }
         if (produtoRequest.preco() == null || produtoRequest.preco().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Preço não pode ser nulo ou negativo");
+            throw new ValidacaoProdutoException("Preço não pode ser nulo ou negativo");
         }
         if (produtoRequest.sku() == null || produtoRequest.sku().trim().isEmpty()) {
-            throw new IllegalArgumentException("SKU não pode ser vazio");
+            throw new ValidacaoProdutoException("SKU não pode ser vazio");
         }
         if (produtoRequest.categoriaId() == null) {
-            throw new IllegalArgumentException("Produto deve pertencer a uma categoria");
+            throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
         }
     }
 
-    public void validarProduto(Produto produto){
+    private void validarProduto(Produto produto){
         if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
-            throw new IllegalArgumentException("Nome do produto não pode ser vazio");
+            throw new ValidacaoProdutoException("Nome do produto não pode ser vazio");
         }
         if (produto.getPreco() == null || produto.getPreco().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Preço não pode ser nulo ou negativo");
+            throw new ValidacaoProdutoException("Preço não pode ser nulo ou negativo");
         }
         if (produto.getSku() == null || produto.getSku().trim().isEmpty()) {
-            throw new IllegalArgumentException("SKU não pode ser vazio");
+            throw new ValidacaoProdutoException("SKU não pode ser vazio");
         }
         if (produto.getCategoria() == null) {
-            throw new IllegalArgumentException("Produto deve pertencer a uma categoria");
+            throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
         }
 
     }
 
     private void validarQuantidade(Integer quantidade){
 
-        if(quantidade == null || quantidade < 0){
-            throw new IllegalArgumentException("A quantidade não pode ser nula ou menor que 0.");
+        if(quantidade == null || quantidade <= 0){
+            throw new ValidacaoProdutoException("A quantidade não pode ser nula ou menor que 1.");
         }
 
     }
