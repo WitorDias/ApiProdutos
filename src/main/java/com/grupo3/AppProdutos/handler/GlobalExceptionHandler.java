@@ -91,4 +91,56 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(CategoriaJaExisteException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleCategoriaJaExiste(CategoriaJaExisteException ex) {
+        String nome = ex.getMessage().contains("'") ? ex.getMessage().split("'")[1] : null;
+        CategoriaJaExisteExceptionCampos response = CategoriaJaExisteExceptionCampos.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .erroDetalhes("Conflito de categoria")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .nome(nome)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(CategoriaComDependenciasException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleCategoriaComDependencias(CategoriaComDependenciasException ex) {
+        String tipo = ex.getMessage().contains("produtos") ? "produtos" : "subcategorias";
+        CategoriaComDependenciasExceptionCampos response = CategoriaComDependenciasExceptionCampos.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .erroDetalhes("Categoria possui dependências")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .tipoDependencia(tipo)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(HierarquiaCircularException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleHierarquiaCircular(HierarquiaCircularException ex) {
+        HierarquiaCircularExceptionCampos response = HierarquiaCircularExceptionCampos.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .erroDetalhes("Hierarquia inválida")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ValidacaoException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleValidacao(ValidacaoException ex) {
+        ValidacaoExceptionCampos response = ValidacaoExceptionCampos.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .erroDetalhes("Erro de validação")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }
