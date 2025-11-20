@@ -27,15 +27,14 @@ public class GlobalExceptionHandler {
                 ValidationExceptionCampos.builder()
                         .timestamp(LocalDateTime.now())
                         .status(HttpStatus.BAD_REQUEST.value())
-                        .erroDetalhes("Bad Request Exception. Invalid fields.")
+                        .erroDetalhes("Bad Request Exception. Campos inválidos.")
                         .notaParaDesenvolvedor(exception.getClass().getName())
-                        .mensagem("Check if some fields may have invalid inputs.")
+                        .mensagem("Verifique se há campos com informações inválidas.")
                         .campos(campos)
                         .camposMensagem(camposMensagem)
                         .build(), HttpStatus.BAD_REQUEST);
     }
 
-    // 400 - Validação manual no service
     @ExceptionHandler(ValidacaoProdutoException.class)
     public ResponseEntity<CamposPersonalizadosException> handleValidacaoProduto(ValidacaoProdutoException ex) {
         ValidacaoProdutoExceptionCampos response = ValidacaoProdutoExceptionCampos.builder()
@@ -49,7 +48,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    // 404 - Produto não encontrado
     @ExceptionHandler(ProdutoNaoEncontradoException.class)
     public ResponseEntity<CamposPersonalizadosException> handleProdutoNaoEncontrado(ProdutoNaoEncontradoException ex) {
         ProdutoNaoEncontradoExceptionCampos response = ProdutoNaoEncontradoExceptionCampos.builder()
@@ -63,7 +61,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    // 404 - Categoria não encontrada
     @ExceptionHandler(CategoriaNaoEncontradaException.class)
     public ResponseEntity<CamposPersonalizadosException> handleCategoriaNaoEncontrada(CategoriaNaoEncontradaException ex) {
         CategoriaNaoEncontradaExceptionCampos response = CategoriaNaoEncontradaExceptionCampos.builder()
@@ -77,7 +74,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    // 409 - SKU já existe
     @ExceptionHandler(SkuJaExisteException.class)
     public ResponseEntity<CamposPersonalizadosException> handleSkuJaExiste(SkuJaExisteException ex) {
         SkuJaExisteExceptionCampos response = SkuJaExisteExceptionCampos.builder()
@@ -142,5 +138,83 @@ public class GlobalExceptionHandler {
                 .mensagem(ex.getMessage())
                 .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(UsuarioNaoEncontradoException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleUsuarioNaoEncontrado(UsuarioNaoEncontradoException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .erroDetalhes("Recurso não encontrado")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(CarrinhoNaoEncontradoException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleCarrinhoNaoEncontrado(CarrinhoNaoEncontradoException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .erroDetalhes("Carrinho não encontrado")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(ItemNaoEstaNoCarrinhoException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleItemNaoEstaNoCarrinho(ItemNaoEstaNoCarrinhoException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .erroDetalhes("Item não encontrado")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(EstoqueInsuficienteException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleEstoqueInsuficiente(EstoqueInsuficienteException ex) {
+        String msg = ex.getMessage();
+        int disponivel = Integer.parseInt(msg.split("Disponível: ")[1].split(",")[0]);
+        int solicitado = Integer.parseInt(msg.split("Solicitado: ")[1]);
+
+        var response = EstoqueInsuficienteExceptionCampos.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .erroDetalhes("Estoque insuficiente")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .disponivel(disponivel)
+                .solicitado(solicitado)
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(CarrinhoVazioException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleCarrinhoVazio(CarrinhoVazioException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .erroDetalhes("Carrinho vazio")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(CarrinhoAtivoJaExisteException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleCarrinhoAtivoJaExiste(CarrinhoAtivoJaExisteException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .erroDetalhes("Conflito de estado do carrinho")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 }
