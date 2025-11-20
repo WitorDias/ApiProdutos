@@ -24,14 +24,20 @@ spring:
 springdoc:
   api-docs:
     path: /v3/api-docs
+    enabled: true
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false
 
 logging:
   level:
     org:
-      springdoc: INFO
+      springdoc: DEBUG
+      springframework:
+        security: DEBUG
 
 api:
   security:
