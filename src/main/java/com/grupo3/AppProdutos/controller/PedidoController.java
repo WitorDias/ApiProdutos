@@ -41,25 +41,12 @@ public class PedidoController {
                 .body(pedidoService.buscarPedidoPorUsuario(usuarioId));
     }
 
-    @PatchMapping("/{id}/confirmar")
-    public ResponseEntity<PedidoResponse> confirmar(@PathVariable Long id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(pedidoService.atualizarStatus(id, StatusPedido.CONFIRMADO));
-    }
-
-    @PatchMapping("/{id}/cancelar")
-    public ResponseEntity<PedidoResponse> cancelar(@PathVariable Long id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(pedidoService.atualizarStatus(id, StatusPedido.CANCELADO));
-    }
-
-    @PatchMapping("/{id}/finalizar")
-    public ResponseEntity<PedidoResponse> finalizar(@PathVariable Long id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(pedidoService.atualizarStatus(id, StatusPedido.FINALIZADO));
+    @PatchMapping("/{id}/status/{status}")
+    public ResponseEntity<PedidoResponse> atualizarStatus(
+            @PathVariable Long id,
+            @PathVariable StatusPedido status
+    ) {
+        return ResponseEntity.ok(pedidoService.atualizarStatus(id, status));
     }
 
 }
