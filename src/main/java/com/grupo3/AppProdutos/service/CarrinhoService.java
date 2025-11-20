@@ -23,16 +23,16 @@ public class CarrinhoService {
     private final ProdutoConsultaService produtoConsultaService;
     private final CarrinhoMapper carrinhoMapper;
     private final EstoqueService estoqueService;
-    private final MovimentoEstoqueService movimentoEstoqueService;
+    private final PedidoService pedidoService;
 
-    public CarrinhoService(CarrinhoRepository carrinhoRepository, ItemCarrinhoRepository itemCarrinhoRepository, UsuarioRepository usuarioRepository, ProdutoConsultaService produtoConsultaService, CarrinhoMapper carrinhoMapper, EstoqueService estoqueService, MovimentoEstoqueService movimentoEstoqueService) {
+    public CarrinhoService(CarrinhoRepository carrinhoRepository, ItemCarrinhoRepository itemCarrinhoRepository, UsuarioRepository usuarioRepository, ProdutoConsultaService produtoConsultaService, CarrinhoMapper carrinhoMapper, EstoqueService estoqueService, PedidoService pedidoService) {
         this.carrinhoRepository = carrinhoRepository;
         this.itemCarrinhoRepository = itemCarrinhoRepository;
         this.usuarioRepository = usuarioRepository;
         this.produtoConsultaService = produtoConsultaService;
         this.carrinhoMapper = carrinhoMapper;
         this.estoqueService = estoqueService;
-        this.movimentoEstoqueService = movimentoEstoqueService;
+        this.pedidoService = pedidoService;
     }
 
     public CarrinhoResponse buscarCarrinhoAtivo(Long usuarioId) {
@@ -151,7 +151,7 @@ public class CarrinhoService {
     }
 
     @Transactional
-    public void finalizarCarrinho(Long usuarioId) {
+    public Long finalizarCarrinho(Long usuarioId) {
         Usuario usuario = buscarUsuario(usuarioId);
         Carrinho carrinho = carrinhoRepository.findByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)
                 .orElseThrow(() -> new IllegalArgumentException("Nenhum carrinho ativo encontrado"));
@@ -160,12 +160,31 @@ public class CarrinhoService {
             throw new IllegalArgumentException("Não é possível finalizar um carrinho vazio");
         }
 
-        for (ItemCarrinho item : carrinho.getItens()) {
-            movimentoEstoqueService.registrarSaida(item.getProduto().getId(), item.getQuantidade());
+        Pedido pedido = new Pedido();
+        pedido.setUsuario(usuario);
+
+        for (ItemCarrinho itemCarrinho : carrinho.getItens()) {
+            ItemPedido itemPedido = ItemPedido.builder()
+                    .pedido(pedido)
+                    .produto(itemCarrinho.getProduto())
+                    .quantidade(itemCarrinho.getQuantidade())
+                    .precoUnitario(itemCarrinho.getCapturaPreco())
+                    .precoTotal(itemCarrinho.getCapturaPreco().multiply(java.math.BigDecimal.valueOf(itemCarrinho.getQuantidade())))
+                    .build();
+            pedido.getItens().add(itemPedido);
         }
+
+        java.math.BigDecimal total = pedido.getItens().stream()
+                .map(ItemPedido::getPrecoTotal)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        pedido.setValorTotal(total);
+
+        pedido = pedidoService.salvarPedido(pedido);
 
         carrinho.setStatusCarrinho(StatusCarrinho.FINALIZADO);
         carrinhoRepository.save(carrinho);
+
+        return pedido.getId();
     }
 
     @Transactional

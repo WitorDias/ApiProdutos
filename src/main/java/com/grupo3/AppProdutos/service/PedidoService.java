@@ -135,6 +135,11 @@ public class PedidoService {
         }
     }
 
+    @Transactional
+    public Pedido salvarPedido(Pedido pedido) {
+        return pedidoRepository.save(pedido);
+    }
+
     private void validarTransicao(StatusPedido atual, StatusPedido novoStatus) {
 
         if (atual == novoStatus) {

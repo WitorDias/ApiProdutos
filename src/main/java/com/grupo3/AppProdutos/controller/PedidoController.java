@@ -45,34 +45,13 @@ public class PedidoController {
                 .body(pedidoService.buscarPedidoPorUsuario(usuarioId));
     }
 
-    @PatchMapping("/{id}/confirmar")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PedidoResponse> confirmar(@PathVariable Long id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(pedidoService.atualizarStatus(id, StatusPedido.CONFIRMADO));
-    }
-
-    @PatchMapping("/{id}/cancelar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE')")
-    public ResponseEntity<PedidoResponse> cancelar(@PathVariable Long id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(pedidoService.atualizarStatus(id, StatusPedido.CANCELADO));
-    }
-
-    @PatchMapping("/{id}/finalizar")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<PedidoResponse> finalizar(@PathVariable Long id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(pedidoService.atualizarStatus(id, StatusPedido.FINALIZADO));
     @PatchMapping("/{id}/status/{status}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE')")
     public ResponseEntity<PedidoResponse> atualizarStatus(
-            @PathVariable Long id,
-            @PathVariable StatusPedido status
+                @PathVariable Long id,
+                @PathVariable StatusPedido status
     ) {
-        return ResponseEntity.ok(pedidoService.atualizarStatus(id, status));
-    }
+            return ResponseEntity.ok(pedidoService.atualizarStatus(id, status));
+        }
 
 }
