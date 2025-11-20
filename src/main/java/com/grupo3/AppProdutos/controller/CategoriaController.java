@@ -6,6 +6,7 @@ import com.grupo3.AppProdutos.model.Categoria;
 import com.grupo3.AppProdutos.service.CategoriaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class CategoriaController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Categoria> salvarCategoria(@RequestBody CriarCategoriaRequest request){
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -28,6 +30,7 @@ public class CategoriaController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR', 'CLIENTE')")
     public ResponseEntity<List<Categoria>> buscarListaDeCategorias(){
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -35,6 +38,7 @@ public class CategoriaController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR', 'CLIENTE')")
     public ResponseEntity<Categoria> buscarCategoriaPorId(@PathVariable Long id){
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -42,12 +46,14 @@ public class CategoriaController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> atualizarCategoria(@PathVariable Long id, @RequestBody AtualizarCategoriaRequest request){
         categoriaService.atualizarCategoria(id, request);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletarCategoria(@PathVariable Long id){
         categoriaService.deletarCategoria(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

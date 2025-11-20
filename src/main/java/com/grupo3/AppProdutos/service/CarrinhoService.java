@@ -131,8 +131,6 @@ public class CarrinhoService {
         ItemCarrinho item = itemCarrinhoRepository.findByCarrinhoAndProduto(carrinho, produto)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado no carrinho"));
 
-        carrinho.getItens().remove(item);
-
         itemCarrinhoRepository.delete(item);
 
         itemCarrinhoRepository.flush();
@@ -146,7 +144,8 @@ public class CarrinhoService {
     @Transactional
     public void limparCarrinho(Long usuarioId) {
         Usuario usuario = buscarUsuario(usuarioId);
-        Carrinho carrinho = buscarOuCriarCarrinhoAtivo(usuario);
+        Carrinho carrinho = carrinhoRepository.findByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)
+                .orElseThrow(() -> new IllegalArgumentException("Nenhum carrinho ativo encontrado"));
 
         itemCarrinhoRepository.deleteAll(carrinho.getItens());
     }

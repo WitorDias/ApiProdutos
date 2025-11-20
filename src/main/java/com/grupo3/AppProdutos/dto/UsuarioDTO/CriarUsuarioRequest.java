@@ -1,11 +1,14 @@
 package com.grupo3.AppProdutos.dto.UsuarioDTO;
 
+import com.grupo3.AppProdutos.model.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record UsuarioRequest (
+import java.util.Set;
+
+public record CriarUsuarioRequest (
         @NotBlank(message = "O nome de usuario é obrigatório")
         String nome,
 
@@ -19,6 +22,10 @@ public record UsuarioRequest (
 
         @NotBlank(message = "O email é obrigatório")
         @Email(message = "Email inválido")
-        String email
-) {
+        String email,
+
+        Set<Role> roles
+)
+{
 }
+

@@ -6,10 +6,12 @@ import com.grupo3.AppProdutos.dto.CarrinhoDTO.CarrinhoResponse;
 import com.grupo3.AppProdutos.service.CarrinhoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("v1/carrinhos")
+@PreAuthorize("hasRole('CLIENTE')")
 public class CarrinhoController {
 
     private final CarrinhoService carrinhoService;
@@ -68,4 +70,3 @@ public class CarrinhoController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
-
