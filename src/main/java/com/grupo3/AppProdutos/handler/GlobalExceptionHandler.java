@@ -253,4 +253,52 @@ public class GlobalExceptionHandler {
                 .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(PedidoNaoEncontradoException.class)
+    public ResponseEntity<CamposPersonalizadosException> handlePedidoNaoEncontrado(PedidoNaoEncontradoException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .erroDetalhes("Pedido não encontrado")
+                .notaParaDesenvolvedor(ex.getClass().getSimpleName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(TransicaoStatusInvalidaException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleTransicaoInvalida(TransicaoStatusInvalidaException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .erroDetalhes("Transição de status inválida")
+                .notaParaDesenvolvedor(ex.getClass().getSimpleName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(StatusJaDefinidoException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleStatusJaDefinido(StatusJaDefinidoException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .erroDetalhes("Status já aplicado")
+                .notaParaDesenvolvedor(ex.getClass().getSimpleName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(PedidoImutavelException.class)
+    public ResponseEntity<CamposPersonalizadosException> handlePedidoImutavel(PedidoImutavelException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .erroDetalhes("Pedido imutável")
+                .notaParaDesenvolvedor(ex.getClass().getSimpleName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }
