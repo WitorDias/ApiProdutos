@@ -301,4 +301,28 @@ public class GlobalExceptionHandler {
                 .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(NomeUsuarioJaExisteException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleNomeUsuarioJaExiste(NomeUsuarioJaExisteException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .erroDetalhes("Conflito de recurso")
+                .notaParaDesenvolvedor(ex.getClass().getSimpleName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(EmailJaExisteException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleEmailJaExiste(EmailJaExisteException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .erroDetalhes("Conflito de recurso")
+                .notaParaDesenvolvedor(ex.getClass().getSimpleName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
 }
