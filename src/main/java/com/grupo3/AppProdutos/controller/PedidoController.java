@@ -67,6 +67,12 @@ public class PedidoController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(pedidoService.atualizarStatus(id, StatusPedido.FINALIZADO));
+    @PatchMapping("/{id}/status/{status}")
+    public ResponseEntity<PedidoResponse> atualizarStatus(
+            @PathVariable Long id,
+            @PathVariable StatusPedido status
+    ) {
+        return ResponseEntity.ok(pedidoService.atualizarStatus(id, status));
     }
 
 }

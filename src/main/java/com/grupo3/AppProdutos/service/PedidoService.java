@@ -91,25 +91,28 @@ public class PedidoService {
     public PedidoResponse atualizarStatus(Long id, StatusPedido novoStatus) {
 
         Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
+                .orElseThrow(
+                        () -> new RuntimeException("Pedido não encontrado")
+                );
 
-        if (pedido.getStatus() == StatusPedido.CANCELADO) {
-            throw new RuntimeException("Pedido já está cancelado e não pode ser alterado.");
-        }
+        StatusPedido statusAtual = pedido.getStatus();
 
-        if (pedido.getStatus() == StatusPedido.FINALIZADO) {
-            throw new RuntimeException("Pedido já está finalizado e não pode ser alterado.");
-        }
+        validarTransicao(statusAtual, novoStatus);
+        pedido.setStatus(novoStatus);
 
-        if (novoStatus == StatusPedido.CONFIRMADO) {
+        if (statusAtual == StatusPedido.NOVO && novoStatus == StatusPedido.CONFIRMADO) {
             baixarEstoqueRegistrandoMovimentos(pedido);
         }
 
-        pedido.setStatus(novoStatus);
+        if (statusAtual == StatusPedido.CONFIRMADO && novoStatus == StatusPedido.CANCELADO) {
+            desfazerBaixaDeEstoque(pedido);
+        }
+
         pedidoRepository.save(pedido);
 
         return PedidoMapper.toResponse(pedido);
     }
+
 
     private void baixarEstoqueRegistrandoMovimentos(Pedido pedido) {
 
@@ -121,4 +124,55 @@ public class PedidoService {
             );
         }
     }
+
+    private void desfazerBaixaDeEstoque(Pedido pedido) {
+
+        for (ItemPedido item : pedido.getItens()) {
+            movimentoEstoqueService.registrarEntrada(
+                    item.getProduto().getId(),
+                    item.getQuantidade()
+            );
+        }
+    }
+
+    private void validarTransicao(StatusPedido atual, StatusPedido novoStatus) {
+
+        if (atual == novoStatus) {
+            throw new RuntimeException("Pedido já está com o status " + novoStatus);
+        }
+
+        switch (atual) {
+            case NOVO -> {
+                if (!(novoStatus == StatusPedido.CONFIRMADO ||
+                        novoStatus == StatusPedido.CANCELADO)) {
+                    throw new RuntimeException("Transição inválida: NOVO → " + novoStatus);
+                }
+            }
+
+            case CONFIRMADO -> {
+                if (!(novoStatus == StatusPedido.CANCELADO ||
+                        novoStatus == StatusPedido.ENVIADO)) {
+                    throw new RuntimeException("Transição inválida: CONFIRMADO → " + novoStatus);
+                }
+            }
+
+            case ENVIADO -> {
+                if (novoStatus != StatusPedido.ENTREGUE) {
+                    throw new RuntimeException("Transição inválida: ENVIADO → " + novoStatus);
+                }
+            }
+
+            case ENTREGUE -> {
+                if (novoStatus != StatusPedido.FINALIZADO) {
+                    throw new RuntimeException("Transição inválida: ENTREGUE → " + novoStatus);
+                }
+            }
+
+            case CANCELADO, FINALIZADO -> {
+                throw new RuntimeException("Pedidos " + atual + " não podem mudar de status.");
+            }
+        }
+    }
+
+
 }
