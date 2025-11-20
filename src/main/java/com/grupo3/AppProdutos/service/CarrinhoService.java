@@ -3,6 +3,7 @@ package com.grupo3.AppProdutos.service;
 import com.grupo3.AppProdutos.dto.CarrinhoDTO.AdicionarItemCarrinhoRequest;
 import com.grupo3.AppProdutos.dto.CarrinhoDTO.AtualizarItemCarrinhoRequest;
 import com.grupo3.AppProdutos.dto.CarrinhoDTO.CarrinhoResponse;
+import com.grupo3.AppProdutos.exception.*;
 import com.grupo3.AppProdutos.mapper.CarrinhoMapper;
 import com.grupo3.AppProdutos.model.*;
 import com.grupo3.AppProdutos.model.enums.StatusCarrinho;
@@ -58,20 +59,14 @@ public class CarrinhoService {
             Integer quantidadeTotal = item.getQuantidade() + request.quantidade();
 
             if (quantidadeTotal > estoque.getQuantidade()) {
-                throw new IllegalArgumentException(
-                    String.format("Estoque insuficiente. Disponível: %d, Solicitado: %d",
-                        estoque.getQuantidade(), quantidadeTotal)
-                );
+                throw new EstoqueInsuficienteException(estoque.getQuantidade(), quantidadeTotal);
             }
 
             item.setQuantidade(quantidadeTotal);
             itemCarrinhoRepository.save(item);
         } else {
             if (request.quantidade() > estoque.getQuantidade()) {
-                throw new IllegalArgumentException(
-                    String.format("Estoque insuficiente. Disponível: %d, Solicitado: %d",
-                        estoque.getQuantidade(), request.quantidade())
-                );
+                throw new EstoqueInsuficienteException(estoque.getQuantidade(), request.quantidade());
             }
 
             ItemCarrinho novoItem = ItemCarrinho.builder()
@@ -84,7 +79,7 @@ public class CarrinhoService {
         }
 
         carrinho = carrinhoRepository.findById(carrinho.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Carrinho não encontrado"));
+                .orElseThrow(CarrinhoNaoEncontradoException::new);
 
         return carrinhoMapper.toResponse(carrinho);
     }
@@ -97,25 +92,22 @@ public class CarrinhoService {
         Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
 
         Carrinho carrinho = carrinhoRepository.findByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)
-                .orElseThrow(() -> new IllegalArgumentException("Nenhum carrinho ativo encontrado"));
+                .orElseThrow(CarrinhoNaoEncontradoException::new);
 
         ItemCarrinho item = itemCarrinhoRepository.findByCarrinhoAndProduto(carrinho, produto)
-                .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado no carrinho"));
+                .orElseThrow(ItemNaoEstaNoCarrinhoException::new);
 
         var estoque = estoqueService.buscarEstoquePorProdutoId(produto.getId());
 
         if (request.quantidade() > estoque.getQuantidade()) {
-            throw new IllegalArgumentException(
-                String.format("Estoque insuficiente. Disponível: %d, Solicitado: %d",
-                    estoque.getQuantidade(), request.quantidade())
-            );
+            throw new EstoqueInsuficienteException(estoque.getQuantidade(), request.quantidade());
         }
 
         item.setQuantidade(request.quantidade());
         itemCarrinhoRepository.save(item);
 
         carrinho = carrinhoRepository.findById(carrinho.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Carrinho não encontrado"));
+                .orElseThrow(CarrinhoNaoEncontradoException::new);
 
         return carrinhoMapper.toResponse(carrinho);
     }
@@ -126,17 +118,19 @@ public class CarrinhoService {
         Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
 
         Carrinho carrinho = carrinhoRepository.findByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)
-                .orElseThrow(() -> new IllegalArgumentException("Nenhum carrinho ativo encontrado"));
+                .orElseThrow(CarrinhoNaoEncontradoException::new);
 
         ItemCarrinho item = itemCarrinhoRepository.findByCarrinhoAndProduto(carrinho, produto)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado no carrinho"));
+
+        carrinho.getItens().remove(item);
 
         itemCarrinhoRepository.delete(item);
 
         itemCarrinhoRepository.flush();
 
         carrinho = carrinhoRepository.findById(carrinho.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Carrinho não encontrado"));
+                .orElseThrow(CarrinhoNaoEncontradoException::new);
 
         return carrinhoMapper.toResponse(carrinho);
     }
@@ -154,10 +148,10 @@ public class CarrinhoService {
     public Long finalizarCarrinho(Long usuarioId) {
         Usuario usuario = buscarUsuario(usuarioId);
         Carrinho carrinho = carrinhoRepository.findByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)
-                .orElseThrow(() -> new IllegalArgumentException("Nenhum carrinho ativo encontrado"));
+                .orElseThrow(CarrinhoNaoEncontradoException::new);
 
         if (carrinho.getItens().isEmpty()) {
-            throw new IllegalArgumentException("Não é possível finalizar um carrinho vazio");
+            throw new CarrinhoVazioException();
         }
 
         Pedido pedido = new Pedido();
@@ -191,7 +185,7 @@ public class CarrinhoService {
     public void cancelarCarrinho(Long usuarioId) {
         Usuario usuario = buscarUsuario(usuarioId);
         Carrinho carrinho = carrinhoRepository.findByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)
-                .orElseThrow(() -> new IllegalArgumentException("Nenhum carrinho ativo encontrado"));
+                .orElseThrow(CarrinhoNaoEncontradoException::new);
 
         carrinho.setStatusCarrinho(StatusCarrinho.CANCELADO);
         carrinhoRepository.save(carrinho);
@@ -199,7 +193,7 @@ public class CarrinhoService {
 
     private Usuario buscarUsuario(Long usuarioId) {
         return usuarioRepository.findByIdAndAtivoTrue(usuarioId)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado com ID: " + usuarioId));
+                .orElseThrow(() -> new UsuarioNaoEncontradoException(usuarioId));
     }
 
     private Carrinho buscarOuCriarCarrinhoAtivo(Usuario usuario) {
@@ -210,7 +204,7 @@ public class CarrinhoService {
         }
 
         if (carrinhoRepository.existsByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)) {
-            throw new IllegalStateException("Usuário já possui um carrinho ativo");
+            throw new CarrinhoAtivoJaExisteException();
         }
 
         Carrinho novoCarrinho = Carrinho.builder()
@@ -223,7 +217,7 @@ public class CarrinhoService {
 
     private void validarQuantidade(Integer quantidade) {
         if (quantidade == null || quantidade <= 0) {
-            throw new IllegalArgumentException("A quantidade deve ser maior que 0");
+            throw new QuantidadeInvalidaException("A quantidade deve ser maior que 0");
         }
     }
 }

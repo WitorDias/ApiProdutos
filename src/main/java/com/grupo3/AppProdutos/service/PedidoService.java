@@ -3,6 +3,7 @@ package com.grupo3.AppProdutos.service;
 import com.grupo3.AppProdutos.dto.PedidoDTO.ItemPedidoRequest;
 import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoRequest;
 import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoResponse;
+import com.grupo3.AppProdutos.exception.*;
 import com.grupo3.AppProdutos.mapper.PedidoMapper;
 import com.grupo3.AppProdutos.model.ItemPedido;
 import com.grupo3.AppProdutos.model.Pedido;
@@ -35,7 +36,7 @@ public class PedidoService {
     public PedidoResponse criarPedido(PedidoRequest pedidoRequest){
 
         var usuario = usuarioRepository.findByIdAndAtivoTrue(pedidoRequest.usuarioId()).orElseThrow(
-                () -> new RuntimeException("Usuário não encontrado")
+                () -> new UsuarioNaoEncontradoException(pedidoRequest.usuarioId())
         );
 
         Pedido pedido = new Pedido();
@@ -46,7 +47,7 @@ public class PedidoService {
         for(ItemPedidoRequest itemRequest : pedidoRequest.itens()){
             var produto = produtoRepository.findById(itemRequest.produtoId())
                     .orElseThrow(
-                            () -> new RuntimeException("Produto não encontrado.")
+                            () -> new ProdutoNaoEncontradoException(itemRequest.produtoId())
                     );
 
             ItemPedido itemPedido = ItemPedido.builder()
@@ -68,7 +69,7 @@ public class PedidoService {
     public PedidoResponse buscarPedidoPorId(Long id) {
         var pedido = pedidoRepository.findById(id)
                 .orElseThrow(
-                        () -> new RuntimeException("Pedido não encontrado")
+                        () -> new PedidoNaoEncontradoException(id)
                 );
 
         return PedidoMapper.toResponse(pedido);
@@ -77,7 +78,7 @@ public class PedidoService {
     public List<PedidoResponse> buscarPedidoPorUsuario(Long usuarioId){
 
         var usuario = usuarioRepository.findByIdAndAtivoTrue(usuarioId).orElseThrow(
-                () -> new RuntimeException("Usuário não encontrado")
+                () -> new UsuarioNaoEncontradoException(usuarioId)
         );
 
         List<Pedido> pedidos = pedidoRepository.findByUsuarioId(usuario.getId());
@@ -92,7 +93,7 @@ public class PedidoService {
 
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(
-                        () -> new RuntimeException("Pedido não encontrado")
+                        () -> new PedidoNaoEncontradoException(id)
                 );
 
         StatusPedido statusAtual = pedido.getStatus();
@@ -143,38 +144,38 @@ public class PedidoService {
     private void validarTransicao(StatusPedido atual, StatusPedido novoStatus) {
 
         if (atual == novoStatus) {
-            throw new RuntimeException("Pedido já está com o status " + novoStatus);
+            throw new StatusJaDefinidoException(atual);
         }
 
         switch (atual) {
             case NOVO -> {
                 if (!(novoStatus == StatusPedido.CONFIRMADO ||
                         novoStatus == StatusPedido.CANCELADO)) {
-                    throw new RuntimeException("Transição inválida: NOVO → " + novoStatus);
+                    throw new TransicaoStatusInvalidaException(atual, novoStatus);
                 }
             }
 
             case CONFIRMADO -> {
                 if (!(novoStatus == StatusPedido.CANCELADO ||
                         novoStatus == StatusPedido.ENVIADO)) {
-                    throw new RuntimeException("Transição inválida: CONFIRMADO → " + novoStatus);
+                    throw new TransicaoStatusInvalidaException(atual, novoStatus);
                 }
             }
 
             case ENVIADO -> {
                 if (novoStatus != StatusPedido.ENTREGUE) {
-                    throw new RuntimeException("Transição inválida: ENVIADO → " + novoStatus);
+                    throw new TransicaoStatusInvalidaException(atual, novoStatus);
                 }
             }
 
             case ENTREGUE -> {
                 if (novoStatus != StatusPedido.FINALIZADO) {
-                    throw new RuntimeException("Transição inválida: ENTREGUE → " + novoStatus);
+                    throw new TransicaoStatusInvalidaException(atual, novoStatus);
                 }
             }
 
             case CANCELADO, FINALIZADO -> {
-                throw new RuntimeException("Pedidos " + atual + " não podem mudar de status.");
+                throw new PedidoImutavelException(atual);
             }
         }
     }

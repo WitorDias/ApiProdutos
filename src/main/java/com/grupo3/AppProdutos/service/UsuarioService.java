@@ -3,6 +3,9 @@ package com.grupo3.AppProdutos.service;
 import com.grupo3.AppProdutos.dto.UsuarioDTO.AtualizarUsuarioRequest;
 import com.grupo3.AppProdutos.dto.UsuarioDTO.CriarUsuarioRequest;
 import com.grupo3.AppProdutos.dto.UsuarioDTO.UsuarioResponse;
+import com.grupo3.AppProdutos.exception.EmailJaExisteException;
+import com.grupo3.AppProdutos.exception.NomeUsuarioJaExisteException;
+import com.grupo3.AppProdutos.exception.UsuarioNaoEncontradoException;
 import com.grupo3.AppProdutos.mapper.UsuarioMapper;
 import com.grupo3.AppProdutos.model.Usuario;
 import com.grupo3.AppProdutos.repository.UsuarioRepository;
@@ -44,8 +47,26 @@ public class UsuarioService {
 
     public UsuarioResponse buscarUsuarioPorId(Long id){
         var usuario = usuarioRepository.findByIdAndAtivoTrue(id).orElseThrow(
-                () -> new RuntimeException("Usuário não encontrado.")
+                () -> new UsuarioNaoEncontradoException(id)
         );
+        return UsuarioMapper.toResponse(usuario);
+    }
+
+    @Transactional
+    public UsuarioResponse atualizarUsuario(Long id, AtualizarUsuarioRequest request){
+        var usuario = usuarioRepository.findByIdAndAtivoTrue(id).orElseThrow(
+                () -> new UsuarioNaoEncontradoException(id)
+        );
+
+        if(request.nome() != null && !request.nome().trim().isEmpty()){
+            usuario.setNome(request.nome());
+        }
+
+        if(request.senha() != null && !request.senha().isEmpty()){
+            usuario.setSenha(passwordEncoder.encode(request.senha()));
+        }
+
+        usuarioRepository.save(usuario);
         return UsuarioMapper.toResponse(usuario);
     }
 
@@ -70,15 +91,18 @@ public class UsuarioService {
     @Transactional
     public void deletarUsuario(Long id){
         var usuario = usuarioRepository.findByIdAndAtivoTrue(id).orElseThrow(
-                () -> new RuntimeException("usuario não encontrado")
+                () -> new UsuarioNaoEncontradoException(id)
         );
         usuario.setAtivo(false);
         usuarioRepository.save(usuario);
     }
 
-    public void validarUsuario(CriarUsuarioRequest criarUsuarioRequest){
-        if(usuarioRepository.existsByEmail(criarUsuarioRequest.email())){
-            throw new RuntimeException("Este email já está em uso");
+    public void validarUsuario(UsuarioRequest usuarioRequest){
+        if(usuarioRepository.existsByNome(usuarioRequest.nome())){
+            throw new NomeUsuarioJaExisteException(usuarioRequest.nome());
+        }
+        if(usuarioRepository.existsByEmail(usuarioRequest.email())){
+            throw new EmailJaExisteException(usuarioRequest.email());
         }
     }
 }

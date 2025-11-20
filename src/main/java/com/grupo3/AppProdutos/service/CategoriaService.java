@@ -2,6 +2,7 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.dto.CategoriaDTO.AtualizarCategoriaRequest;
 import com.grupo3.AppProdutos.dto.CategoriaDTO.CriarCategoriaRequest;
+import com.grupo3.AppProdutos.exception.*;
 import com.grupo3.AppProdutos.model.Categoria;
 import com.grupo3.AppProdutos.repository.CategoriaRepository;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,7 @@ public class CategoriaService {
 
     public Categoria buscarCategoriaPorId(Long id){
         return categoriaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Categoria não encontrada com ID: " + id));
+                .orElseThrow(() -> new CategoriaNaoEncontradaException(id));
     }
 
     @Transactional
@@ -78,11 +79,11 @@ public class CategoriaService {
         var categoria = buscarCategoriaPorId(id);
 
         if(!categoria.getProdutos().isEmpty()){
-            throw new IllegalArgumentException("Não é possível deletar categoria com produtos associados");
+            throw new CategoriaComDependenciasException("Não é possível deletar categoria com produtos associados");
         }
 
         if(!categoria.getSubcategorias().isEmpty()){
-            throw new IllegalArgumentException("Não é possível deletar categoria com subcategorias");
+            throw new CategoriaComDependenciasException("Não é possível deletar categoria com subcategorias");
         }
 
         categoriaRepository.delete(categoria);
@@ -90,7 +91,7 @@ public class CategoriaService {
 
     private void validarNome(String nome){
         if(nome == null || nome.trim().isEmpty()){
-            throw new IllegalArgumentException("Nome da categoria não pode ser vazio");
+            throw new ValidacaoException("Nome da categoria não pode ser vazio");
         }
     }
 
@@ -103,7 +104,7 @@ public class CategoriaService {
         }
 
         if(existe){
-            throw new IllegalArgumentException("Já existe uma categoria com este nome no mesmo nível");
+            throw new CategoriaJaExisteException(nome);
         }
     }
 
@@ -111,7 +112,7 @@ public class CategoriaService {
         Categoria atual = novoParent;
         while(atual != null){
             if(atual.getId().equals(categoriaId)){
-                throw new IllegalArgumentException("Hierarquia circular detectada: uma categoria não pode ser pai de si mesma");
+                throw new HierarquiaCircularException();
             }
             atual = atual.getParent();
         }
