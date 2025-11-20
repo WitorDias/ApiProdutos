@@ -217,4 +217,28 @@ public class GlobalExceptionHandler {
                 .build();
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(EstoqueNaoEncontradoException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleEstoqueNaoEncontrado(EstoqueNaoEncontradoException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .erroDetalhes("Recurso não encontrado")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(QuantidadeEstoqueInvalidaException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleQuantidadeInvalida(QuantidadeEstoqueInvalidaException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .erroDetalhes("Validação de estoque")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }
