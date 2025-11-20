@@ -2,7 +2,6 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.exception.EstoqueInsuficienteException;
 import com.grupo3.AppProdutos.exception.QuantidadeInvalidaException;
-import com.grupo3.AppProdutos.exception.ValidacaoException;
 import com.grupo3.AppProdutos.model.Estoque;
 import com.grupo3.AppProdutos.model.MovimentoEstoque;
 import com.grupo3.AppProdutos.model.Produto;
@@ -63,12 +62,6 @@ public class MovimentoEstoqueService {
     public List<MovimentoEstoque> listarMovimentosPorProdutoId(Long produtoId){
         Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
         return estoqueMovimentoRepository.findByProduto_Id(produto.getId());
-    }
-
-
-    public void deletarMovimentoEstoquePorProdutoId(Long id){
-        var produto = produtoConsultaService.buscarProdutoPorId(id);
-        estoqueMovimentoRepository.deleteByProduto(produto);
     }
 
     private void validarQuantidade(Integer quantidade){
