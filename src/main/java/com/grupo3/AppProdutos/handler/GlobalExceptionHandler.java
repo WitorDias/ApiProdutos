@@ -241,4 +241,16 @@ public class GlobalExceptionHandler {
                 .build();
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(QuantidadeInvalidaException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleQuantidadeInvalida(QuantidadeInvalidaException ex) {
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .erroDetalhes("Validação de quantidade")
+                .notaParaDesenvolvedor(ex.getClass().getName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }

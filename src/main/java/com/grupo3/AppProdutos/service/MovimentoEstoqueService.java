@@ -1,5 +1,8 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.exception.EstoqueInsuficienteException;
+import com.grupo3.AppProdutos.exception.QuantidadeInvalidaException;
+import com.grupo3.AppProdutos.exception.ValidacaoException;
 import com.grupo3.AppProdutos.model.Estoque;
 import com.grupo3.AppProdutos.model.MovimentoEstoque;
 import com.grupo3.AppProdutos.model.Produto;
@@ -45,7 +48,7 @@ public class MovimentoEstoqueService {
         Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
         Estoque estoque = estoqueService.buscarEstoquePorProdutoId(produtoId);
         if(estoque.getQuantidade() < quantidade){
-            throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getId() + " " + produto.getNome());
+            throw new EstoqueInsuficienteException(estoque.getQuantidade(), quantidade);
         }
         estoqueService.atualizarQuantidadeEstoque(produtoId, estoque.getQuantidade() - quantidade);
         MovimentoEstoque movimento = MovimentoEstoque.builder()
@@ -71,7 +74,7 @@ public class MovimentoEstoqueService {
     private void validarQuantidade(Integer quantidade){
 
         if(quantidade == null || quantidade <= 0){
-            throw new IllegalArgumentException("A quantidade deve ser maior que 0.");
+            throw new QuantidadeInvalidaException("A quantidade deve ser maior que 0.");
         }
 
     }

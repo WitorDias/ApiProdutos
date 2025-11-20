@@ -197,7 +197,7 @@ public class CarrinhoService {
 
     private void validarQuantidade(Integer quantidade) {
         if (quantidade == null || quantidade <= 0) {
-            throw new ValidacaoException("A quantidade deve ser maior que 0");
+            throw new QuantidadeInvalidaException("A quantidade deve ser maior que 0");
         }
     }
 }
