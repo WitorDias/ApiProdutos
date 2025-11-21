@@ -2,8 +2,10 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.dto.ProdutoDTO.CriarProdutoRequest;
 import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoResponse;
 import com.grupo3.AppProdutos.exception.SkuJaExisteException;
 import com.grupo3.AppProdutos.exception.ValidacaoProdutoException;
+import com.grupo3.AppProdutos.mapper.ProdutoMapper;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
 
@@ -30,12 +32,13 @@ public class ProdutoService {
         this.categoriaService = categoriaService;
     }
 
-    public List<Produto> buscarListaDeProdutos(){
-        return produtoRepository.findAllByAtivoTrue();
+    public List<ProdutoResponse> buscarListaDeProdutos(){
+        return ProdutoMapper.toResponseList(produtoRepository.findAllByAtivoTrue());
     }
 
+
     @Transactional
-    public Produto salvarProduto(CriarProdutoRequest request){
+    public ProdutoResponse salvarProduto(CriarProdutoRequest request){
         ProdutoRequest produtoRequest = request.produto();
         validarProdutoRequest(produtoRequest);
         validarQuantidade(request.quantidade());
@@ -61,16 +64,21 @@ public class ProdutoService {
         Produto produtoSalvo = produtoRepository.save(produto);
         estoqueService.criarEstoqueParaProduto(produtoSalvo, request.quantidade());
 
-        return produtoSalvo;
+        return ProdutoMapper.toResponse(produtoSalvo);
 
     }
 
-    public Produto buscarProdutoPorId(Long id){
+    public ProdutoResponse buscarProdutoPorId(Long id){
+        return ProdutoMapper.toResponse(produtoConsultaService.buscarProdutoPorId(id));
+    }
+
+    private Produto buscarProdutoPorEntidade(Long id){
         return produtoConsultaService.buscarProdutoPorId(id);
     }
 
     @Transactional
-    public Produto atualizarProduto(Long id, ProdutoRequest request){
+    public ProdutoResponse atualizarProduto(Long id, ProdutoRequest request){
+
         if (request.preco() == null || request.preco().compareTo(BigDecimal.ZERO) < 0) {
             throw new ValidacaoProdutoException("Preço não pode ser nulo ou negativo");
         }
@@ -78,7 +86,7 @@ public class ProdutoService {
             throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
         }
 
-        var produtoParaAtualizar = buscarProdutoPorId(id);
+        var produtoParaAtualizar = buscarProdutoPorEntidade(id);
         var categoria = categoriaService.buscarCategoriaPorId(request.categoriaId());
 
         produtoParaAtualizar.setNome(request.nome());
@@ -89,35 +97,12 @@ public class ProdutoService {
         produtoParaAtualizar.setAtivo(request.ativo() != null ? request.ativo() : produtoParaAtualizar.getAtivo());
         produtoParaAtualizar.setAtualizadoEm(LocalDateTime.now());
 
-        return produtoRepository.save(produtoParaAtualizar);
-    }
-
-    @Transactional
-    public Produto atualizarProduto(Produto produto){
-
-        var produtoParaAtualizar = buscarProdutoPorId(produto.getId());
-
-        if (produto.getCategoria() != null && produto.getCategoria().getId() != null) {
-            var categoria = categoriaService.buscarCategoriaPorId(produto.getCategoria().getId());
-            produtoParaAtualizar.setCategoria(categoria);
-        }
-
-        produtoParaAtualizar.setNome(produto.getNome());
-        produtoParaAtualizar.setDescricao(produto.getDescricao());
-        produtoParaAtualizar.setPreco(produto.getPreco());
-        produtoParaAtualizar.setAtualizadoEm(LocalDateTime.now());
-        produtoParaAtualizar.setSku(produto.getSku());
-        produtoParaAtualizar.setAtivo(produto.getAtivo());
-
-        validarProduto(produtoParaAtualizar);
-
-        return produtoRepository.save(produtoParaAtualizar);
-
+        return ProdutoMapper.toResponse(produtoRepository.save(produtoParaAtualizar));
     }
 
     @Transactional
     public void deletarProduto(Long id){
-        var produto = buscarProdutoPorId(id);
+        var produto = buscarProdutoPorEntidade(id);
         produto.setAtivo(false);
         produto.setAtualizadoEm(LocalDateTime.now());
         produtoRepository.save(produto);
@@ -136,22 +121,6 @@ public class ProdutoService {
         if (produtoRequest.categoriaId() == null) {
             throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
         }
-    }
-
-    private void validarProduto(Produto produto){
-        if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
-            throw new ValidacaoProdutoException("Nome do produto não pode ser vazio");
-        }
-        if (produto.getPreco() == null || produto.getPreco().compareTo(BigDecimal.ZERO) < 0) {
-            throw new ValidacaoProdutoException("Preço não pode ser nulo ou negativo");
-        }
-        if (produto.getSku() == null || produto.getSku().trim().isEmpty()) {
-            throw new ValidacaoProdutoException("SKU não pode ser vazio");
-        }
-        if (produto.getCategoria() == null) {
-            throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
-        }
-
     }
 
     private void validarQuantidade(Integer quantidade){
