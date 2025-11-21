@@ -1,4 +1,4 @@
-package com.grupo3.AppProdutos.dto;
+package com.grupo3.AppProdutos.dto.CarrinhoDTO;
 
 import com.grupo3.AppProdutos.model.enums.StatusCarrinho;
 

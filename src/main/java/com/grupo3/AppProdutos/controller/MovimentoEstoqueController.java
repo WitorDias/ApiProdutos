@@ -1,6 +1,6 @@
 package com.grupo3.AppProdutos.controller;
 
-import com.grupo3.AppProdutos.dto.MovimentoRequest;
+import com.grupo3.AppProdutos.dto.EstoqueDTO.MovimentoRequest;
 import com.grupo3.AppProdutos.model.MovimentoEstoque;
 import com.grupo3.AppProdutos.service.MovimentoEstoqueService;
 import org.springframework.http.HttpStatus;

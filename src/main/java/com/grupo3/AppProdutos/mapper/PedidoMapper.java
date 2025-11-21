@@ -1,6 +1,7 @@
 package com.grupo3.AppProdutos.mapper;
 
-import com.grupo3.AppProdutos.dto.*;
+import com.grupo3.AppProdutos.dto.PedidoDTO.ItemPedidoResponse;
+import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoResponse;
 import com.grupo3.AppProdutos.model.ItemPedido;
 import com.grupo3.AppProdutos.model.Pedido;
 

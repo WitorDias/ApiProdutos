@@ -1,7 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
-import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
-import com.grupo3.AppProdutos.dto.ProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.CriarProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoRequest;
 import com.grupo3.AppProdutos.exception.SkuJaExisteException;
 import com.grupo3.AppProdutos.exception.ValidacaoProdutoException;
 import com.grupo3.AppProdutos.model.Produto;

@@ -1,15 +1,18 @@
 package com.grupo3.AppProdutos.controller;
 
-import com.grupo3.AppProdutos.dto.AdicionarItemCarrinhoRequest;
-import com.grupo3.AppProdutos.dto.AtualizarItemCarrinhoRequest;
-import com.grupo3.AppProdutos.dto.CarrinhoResponse;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.AdicionarItemCarrinhoRequest;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.AtualizarItemCarrinhoRequest;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.CarrinhoResponse;
+import com.grupo3.AppProdutos.dto.CarrinhoDTO.FinalizarCarrinhoResponse;
 import com.grupo3.AppProdutos.service.CarrinhoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("v1/carrinhos")
+@PreAuthorize("hasRole('CLIENTE')")
 public class CarrinhoController {
 
     private final CarrinhoService carrinhoService;
@@ -57,9 +60,13 @@ public class CarrinhoController {
     }
 
     @PostMapping("/finalizar")
-    public ResponseEntity<Void> finalizarCarrinho(@RequestParam Long usuarioId) {
-        carrinhoService.finalizarCarrinho(usuarioId);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    public ResponseEntity<FinalizarCarrinhoResponse> finalizarCarrinho(@RequestParam Long usuarioId) {
+        Long pedidoId = carrinhoService.finalizarCarrinho(usuarioId);
+        FinalizarCarrinhoResponse response = new FinalizarCarrinhoResponse(
+                pedidoId,
+                "Carrinho finalizado com sucesso! Pedido criado com status NOVO. Para confirmar o pedido e baixar o estoque, use o endpoint de atualizar status do pedido."
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/cancelar")
@@ -68,4 +75,3 @@ public class CarrinhoController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
-

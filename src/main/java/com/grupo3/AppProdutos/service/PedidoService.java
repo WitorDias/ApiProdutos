@@ -1,8 +1,8 @@
 package com.grupo3.AppProdutos.service;
 
-import com.grupo3.AppProdutos.dto.ItemPedidoRequest;
-import com.grupo3.AppProdutos.dto.PedidoRequest;
-import com.grupo3.AppProdutos.dto.PedidoResponse;
+import com.grupo3.AppProdutos.dto.PedidoDTO.ItemPedidoRequest;
+import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoRequest;
+import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoResponse;
 import com.grupo3.AppProdutos.exception.*;
 import com.grupo3.AppProdutos.mapper.PedidoMapper;
 import com.grupo3.AppProdutos.model.ItemPedido;
@@ -134,6 +134,11 @@ public class PedidoService {
                     item.getQuantidade()
             );
         }
+    }
+
+    @Transactional
+    public Pedido salvarPedido(Pedido pedido) {
+        return pedidoRepository.save(pedido);
     }
 
     private void validarTransicao(StatusPedido atual, StatusPedido novoStatus) {

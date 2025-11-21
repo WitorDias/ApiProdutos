@@ -1,11 +1,12 @@
 package com.grupo3.AppProdutos.controller;
 
-import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
-import com.grupo3.AppProdutos.dto.ProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.CriarProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoRequest;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.service.ProdutoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class ProdutoController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
     public ResponseEntity<Produto> salvarProduto(@RequestBody CriarProdutoRequest request){
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -28,6 +30,7 @@ public class ProdutoController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR', 'CLIENTE')")
     public ResponseEntity<List<Produto>> buscarListaDeProdutos(){
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -35,6 +38,7 @@ public class ProdutoController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR', 'CLIENTE')")
     public ResponseEntity<Produto> buscarProdutoPorId(@PathVariable Long id){
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -42,6 +46,7 @@ public class ProdutoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
     public ResponseEntity<Produto> atualizarProduto(@PathVariable Long id, @RequestBody ProdutoRequest request){
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -49,6 +54,7 @@ public class ProdutoController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deletarProduto(@PathVariable Long id){
         produtoService.deletarProduto(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);

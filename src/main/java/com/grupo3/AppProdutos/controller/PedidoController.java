@@ -1,11 +1,12 @@
 package com.grupo3.AppProdutos.controller;
 
-import com.grupo3.AppProdutos.dto.PedidoRequest;
-import com.grupo3.AppProdutos.dto.PedidoResponse;
+import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoRequest;
+import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoResponse;
 import com.grupo3.AppProdutos.model.enums.StatusPedido;
 import com.grupo3.AppProdutos.service.PedidoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,13 +22,15 @@ public class PedidoController {
     }
 
     @PostMapping
-    public ResponseEntity<PedidoResponse> criarPedido(@RequestBody PedidoRequest pedidoRequest){
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<PedidoResponse> criarPedido(@RequestBody PedidoRequest pedidorequest){
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(pedidoService.criarPedido(pedidoRequest));
+                .body(pedidoService.criarPedido(pedidorequest));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE')")
     public ResponseEntity<PedidoResponse> buscarPorId(@PathVariable Long id) {
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -35,6 +38,7 @@ public class PedidoController {
     }
 
     @GetMapping("/usuario/{usuarioId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE')")
     public ResponseEntity<List<PedidoResponse>> listarPorUsuario(@PathVariable Long usuarioId) {
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -42,12 +46,12 @@ public class PedidoController {
     }
 
     @PatchMapping("/{id}/status/{status}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENTE')")
     public ResponseEntity<PedidoResponse> atualizarStatus(
-            @PathVariable Long id,
-            @PathVariable StatusPedido status
+                @PathVariable Long id,
+                @PathVariable StatusPedido status
     ) {
-        return ResponseEntity.ok(pedidoService.atualizarStatus(id, status));
-    }
+            return ResponseEntity.ok(pedidoService.atualizarStatus(id, status));
+        }
 
 }
-

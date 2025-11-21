@@ -325,4 +325,28 @@ public class GlobalExceptionHandler {
                 .build();
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(TokenGeracaoException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleTokenGeracao(TokenGeracaoException ex) {
+        var response = TokenGeracaoExceptionCampos.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .erroDetalhes("Erro ao gerar token de autenticação")
+                .notaParaDesenvolvedor(ex.getClass().getSimpleName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(UsuarioNaoAutenticadoException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleUsuarioNaoAutenticado(UsuarioNaoAutenticadoException ex) {
+        var response = UsuarioNaoAutenticadoExceptionCampos.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .erroDetalhes("Autenticação necessária")
+                .notaParaDesenvolvedor(ex.getClass().getSimpleName())
+                .mensagem(ex.getMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
 }
