@@ -1,5 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.auditoria.AuditService;
+import com.grupo3.AppProdutos.auditoria.TipoOperacao;
 import com.grupo3.AppProdutos.exception.EstoqueNaoEncontradoException;
 import com.grupo3.AppProdutos.exception.QuantidadeEstoqueInvalidaException;
 import com.grupo3.AppProdutos.model.Estoque;
@@ -15,10 +17,12 @@ public class EstoqueService {
 
     private final EstoqueRepository estoqueRepository;
     private final ProdutoConsultaService produtoConsultaService;
+    private final AuditService auditService;
 
-    public EstoqueService(EstoqueRepository estoqueRepository, ProdutoConsultaService produtoConsultaService) {
+    public EstoqueService(EstoqueRepository estoqueRepository, ProdutoConsultaService produtoConsultaService, AuditService auditService) {
         this.estoqueRepository = estoqueRepository;
         this.produtoConsultaService = produtoConsultaService;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -33,6 +37,7 @@ public class EstoqueService {
                 .atualizadoEm(LocalDateTime.now())
                 .build();
 
+        auditService.registrar("Estoque", estoque.getId(), TipoOperacao.CREATE, null, estoque);
         return estoqueRepository.save(estoque);
     }
 
@@ -50,9 +55,11 @@ public class EstoqueService {
 
         validarQuantidade(novaQuantidade);
         Estoque estoque = buscarEstoquePorProdutoId(produtoId);
+        Estoque estoqueSemAlterarQuantidade = clonarEstoque(estoque);
         estoque.setQuantidade(novaQuantidade);
         estoque.setAtualizadoEm(LocalDateTime.now());
 
+        auditService.registrar("Estoque", estoque.getId(), TipoOperacao.UPDATE, estoqueSemAlterarQuantidade, estoque);
         return estoqueRepository.save(estoque);
     }
 
@@ -62,6 +69,15 @@ public class EstoqueService {
             throw new QuantidadeEstoqueInvalidaException();
         }
 
+    }
+
+    private Estoque clonarEstoque(Estoque estoque){
+        return Estoque.builder()
+                .produto(estoque.getProduto())
+                .quantidade(estoque.getQuantidade())
+                .criadoEm(estoque.getCriadoEm())
+                .atualizadoEm(estoque.getAtualizadoEm())
+                .build();
     }
 
 }
