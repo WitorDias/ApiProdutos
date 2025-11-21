@@ -1,5 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.auditoria.AuditService;
+import com.grupo3.AppProdutos.auditoria.TipoOperacao;
 import com.grupo3.AppProdutos.dto.CarrinhoDTO.AdicionarItemCarrinhoRequest;
 import com.grupo3.AppProdutos.dto.CarrinhoDTO.AtualizarItemCarrinhoRequest;
 import com.grupo3.AppProdutos.dto.CarrinhoDTO.CarrinhoResponse;
@@ -25,8 +27,9 @@ public class CarrinhoService {
     private final CarrinhoMapper carrinhoMapper;
     private final EstoqueService estoqueService;
     private final PedidoService pedidoService;
+    private final AuditService auditService;
 
-    public CarrinhoService(CarrinhoRepository carrinhoRepository, ItemCarrinhoRepository itemCarrinhoRepository, UsuarioRepository usuarioRepository, ProdutoConsultaService produtoConsultaService, CarrinhoMapper carrinhoMapper, EstoqueService estoqueService, PedidoService pedidoService) {
+    public CarrinhoService(CarrinhoRepository carrinhoRepository, ItemCarrinhoRepository itemCarrinhoRepository, UsuarioRepository usuarioRepository, ProdutoConsultaService produtoConsultaService, CarrinhoMapper carrinhoMapper, EstoqueService estoqueService, PedidoService pedidoService, AuditService auditService) {
         this.carrinhoRepository = carrinhoRepository;
         this.itemCarrinhoRepository = itemCarrinhoRepository;
         this.usuarioRepository = usuarioRepository;
@@ -34,6 +37,7 @@ public class CarrinhoService {
         this.carrinhoMapper = carrinhoMapper;
         this.estoqueService = estoqueService;
         this.pedidoService = pedidoService;
+        this.auditService = auditService;
     }
 
     public CarrinhoResponse buscarCarrinhoAtivo(Long usuarioId) {
@@ -62,8 +66,13 @@ public class CarrinhoService {
                 throw new EstoqueInsuficienteException(estoque.getQuantidade(), quantidadeTotal);
             }
 
+            ItemCarrinho antigo = clonarItemCarrinho(item);
+
             item.setQuantidade(quantidadeTotal);
             itemCarrinhoRepository.save(item);
+
+            auditService.registrar("ItemCarrinho", item.getId(), TipoOperacao.UPDATE, antigo, item);
+
         } else {
             if (request.quantidade() > estoque.getQuantidade()) {
                 throw new EstoqueInsuficienteException(estoque.getQuantidade(), request.quantidade());
@@ -76,11 +85,13 @@ public class CarrinhoService {
                     .capturaPreco(produto.getPreco())
                     .build();
             itemCarrinhoRepository.save(novoItem);
+            auditService.registrar("ItemCarrinho", novoItem.getId(), TipoOperacao.CREATE, null, novoItem);
         }
 
         carrinho = carrinhoRepository.findById(carrinho.getId())
                 .orElseThrow(CarrinhoNaoEncontradoException::new);
 
+        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, null, carrinho);
         return carrinhoMapper.toResponse(carrinho);
     }
 
@@ -103,8 +114,11 @@ public class CarrinhoService {
             throw new EstoqueInsuficienteException(estoque.getQuantidade(), request.quantidade());
         }
 
+        ItemCarrinho antigo = clonarItemCarrinho(item);
         item.setQuantidade(request.quantidade());
         itemCarrinhoRepository.save(item);
+
+        auditService.registrar("ItemCarrinho", item.getId(), TipoOperacao.UPDATE, antigo, item);
 
         carrinho = carrinhoRepository.findById(carrinho.getId())
                 .orElseThrow(CarrinhoNaoEncontradoException::new);
@@ -123,11 +137,14 @@ public class CarrinhoService {
         ItemCarrinho item = itemCarrinhoRepository.findByCarrinhoAndProduto(carrinho, produto)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado no carrinho"));
 
+        ItemCarrinho antigo = clonarItemCarrinho(item);
+
         carrinho.getItens().remove(item);
-
         itemCarrinhoRepository.delete(item);
-
         itemCarrinhoRepository.flush();
+
+        auditService.registrar("ItemCarrinho", antigo.getId(), TipoOperacao.DELETE, antigo, null);
+        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, null, carrinho);
 
         carrinho = carrinhoRepository.findById(carrinho.getId())
                 .orElseThrow(CarrinhoNaoEncontradoException::new);
@@ -140,6 +157,10 @@ public class CarrinhoService {
         Usuario usuario = buscarUsuario(usuarioId);
         Carrinho carrinho = carrinhoRepository.findByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)
                 .orElseThrow(() -> new IllegalArgumentException("Nenhum carrinho ativo encontrado"));
+
+        for (ItemCarrinho item : carrinho.getItens()) {
+            auditService.registrar("ItemCarrinho", item.getId(), TipoOperacao.DELETE, clonarItemCarrinho(item), null);
+        }
 
         itemCarrinhoRepository.deleteAll(carrinho.getItens());
     }
@@ -178,6 +199,9 @@ public class CarrinhoService {
         carrinho.setStatusCarrinho(StatusCarrinho.FINALIZADO);
         carrinhoRepository.save(carrinho);
 
+        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, null, carrinho);
+        auditService.registrar("Pedido", pedido.getId(), TipoOperacao.CREATE, null, pedido);
+
         return pedido.getId();
     }
 
@@ -187,8 +211,12 @@ public class CarrinhoService {
         Carrinho carrinho = carrinhoRepository.findByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)
                 .orElseThrow(CarrinhoNaoEncontradoException::new);
 
+        Carrinho antigo = clonarCarrinho(carrinho);
+
         carrinho.setStatusCarrinho(StatusCarrinho.CANCELADO);
         carrinhoRepository.save(carrinho);
+
+        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, antigo, carrinho);
     }
 
     private Usuario buscarUsuario(Long usuarioId) {
@@ -211,7 +239,12 @@ public class CarrinhoService {
                 .usuario(usuario)
                 .statusCarrinho(StatusCarrinho.ABERTO)
                 .build();
-        return carrinhoRepository.save(novoCarrinho);
+
+
+        Carrinho salvo = carrinhoRepository.save(novoCarrinho);
+        auditService.registrar("Carrinho", salvo.getId(), TipoOperacao.CREATE, null, clonarCarrinho(salvo));
+
+        return salvo;
     }
 
 
@@ -220,5 +253,26 @@ public class CarrinhoService {
             throw new QuantidadeInvalidaException("A quantidade deve ser maior que 0");
         }
     }
+    private Carrinho clonarCarrinho(Carrinho carrinho){
+        return Carrinho.builder()
+                .id(carrinho.getId())
+                .usuario(carrinho.getUsuario())
+                .statusCarrinho(carrinho.getStatusCarrinho())
+                .criadoEm(carrinho.getCriadoEm())
+                .atualizadoEm(carrinho.getAtualizadoEm())
+                .itens(carrinho.getItens())
+                .build();
+
+    }
+    private ItemCarrinho clonarItemCarrinho(ItemCarrinho item) {
+        return ItemCarrinho.builder()
+                .id(item.getId())
+                .carrinho(item.getCarrinho())
+                .produto(item.getProduto())
+                .quantidade(item.getQuantidade())
+                .capturaPreco(item.getCapturaPreco())
+                .build();
+    }
+
 }
 
