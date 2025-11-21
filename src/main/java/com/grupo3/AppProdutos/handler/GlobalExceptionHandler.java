@@ -1,8 +1,12 @@
 package com.grupo3.AppProdutos.handler;
 
 import com.grupo3.AppProdutos.exception.*;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -348,5 +352,41 @@ public class GlobalExceptionHandler {
                 .mensagem(ex.getMessage())
                 .build();
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleAccessDeniedException(
+            AccessDeniedException ex, HttpServletRequest request) {
+
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .erroDetalhes("Acesso negado")
+                .notaParaDesenvolvedor("AccessDeniedException")
+                .mensagem("Você não tem permissão para acessar este recurso")
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-Request-Path", request.getRequestURI());
+
+        return new ResponseEntity<>(response, headers, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<CamposPersonalizadosException> handleAuthenticationException(
+            AuthenticationException ex, HttpServletRequest request) {
+
+        var response = CamposPersonalizadosException.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .erroDetalhes("Autenticação necessária")
+                .notaParaDesenvolvedor("AuthenticationException")
+                .mensagem("Token inválido, expirado ou ausente")
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-Request-Path", request.getRequestURI());
+
+        return new ResponseEntity<>(response, headers, HttpStatus.UNAUTHORIZED);
     }
 }
