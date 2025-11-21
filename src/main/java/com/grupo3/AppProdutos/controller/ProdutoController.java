@@ -2,8 +2,9 @@ package com.grupo3.AppProdutos.controller;
 
 import com.grupo3.AppProdutos.dto.ProdutoDTO.CriarProdutoRequest;
 import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoRequest;
-import com.grupo3.AppProdutos.model.Produto;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoResponse;
 import com.grupo3.AppProdutos.service.ProdutoService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +24,7 @@ public class ProdutoController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
-    public ResponseEntity<Produto> salvarProduto(@RequestBody CriarProdutoRequest request){
+    public ResponseEntity<ProdutoResponse> salvarProduto(@Valid @RequestBody CriarProdutoRequest request){
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(produtoService.salvarProduto(request));
@@ -31,7 +32,7 @@ public class ProdutoController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR', 'CLIENTE')")
-    public ResponseEntity<List<Produto>> buscarListaDeProdutos(){
+    public ResponseEntity<List<ProdutoResponse>> buscarListaDeProdutos(){
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(produtoService.buscarListaDeProdutos());
@@ -39,7 +40,7 @@ public class ProdutoController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR', 'CLIENTE')")
-    public ResponseEntity<Produto> buscarProdutoPorId(@PathVariable Long id){
+    public ResponseEntity<ProdutoResponse> buscarProdutoPorId(@PathVariable Long id){
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(produtoService.buscarProdutoPorId(id));
@@ -47,7 +48,7 @@ public class ProdutoController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'VENDEDOR')")
-    public ResponseEntity<Produto> atualizarProduto(@PathVariable Long id, @RequestBody ProdutoRequest request){
+    public ResponseEntity<ProdutoResponse> atualizarProduto(@PathVariable Long id, @Valid @RequestBody ProdutoRequest request){
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(produtoService.atualizarProduto(id, request));
