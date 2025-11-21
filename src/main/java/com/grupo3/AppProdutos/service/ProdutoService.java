@@ -94,6 +94,7 @@ public class ProdutoService {
 
         var produtoParaAtualizar = buscarProdutoPorEntidade(id);
         var categoria = categoriaService.buscarCategoriaPorId(request.categoriaId());
+        auditService.registrar("Produto", produtoParaAtualizar.getId(), TipoOperacao.UPDATE, produtoParaAtualizar, request);
 
         produtoParaAtualizar.setNome(request.nome());
         produtoParaAtualizar.setDescricao(request.descricao());
@@ -102,8 +103,6 @@ public class ProdutoService {
         produtoParaAtualizar.setCategoria(categoria);
         produtoParaAtualizar.setAtivo(request.ativo() != null ? request.ativo() : produtoParaAtualizar.getAtivo());
         produtoParaAtualizar.setAtualizadoEm(LocalDateTime.now());
-
-        auditService.registrar("Produto", produtoParaAtualizar.getId(), TipoOperacao.UPDATE, produtoParaAtualizar, request);
 
         return ProdutoMapper.toResponse(produtoRepository.save(produtoParaAtualizar));
     }
