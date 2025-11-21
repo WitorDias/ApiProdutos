@@ -1,5 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.auditoria.AuditService;
+import com.grupo3.AppProdutos.auditoria.TipoOperacao;
 import com.grupo3.AppProdutos.exception.EstoqueInsuficienteException;
 import com.grupo3.AppProdutos.exception.QuantidadeInvalidaException;
 import com.grupo3.AppProdutos.model.Estoque;
@@ -19,11 +21,13 @@ public class MovimentoEstoqueService {
     private final EstoqueMovimentoRepository estoqueMovimentoRepository;
     private final EstoqueService estoqueService;
     private final ProdutoConsultaService produtoConsultaService;
+    private final AuditService auditService;
 
-    public MovimentoEstoqueService(EstoqueMovimentoRepository estoqueMovimentoRepository, EstoqueService estoqueService, ProdutoConsultaService produtoConsultaService) {
+    public MovimentoEstoqueService(EstoqueMovimentoRepository estoqueMovimentoRepository, EstoqueService estoqueService, ProdutoConsultaService produtoConsultaService, AuditService auditService) {
         this.estoqueMovimentoRepository = estoqueMovimentoRepository;
         this.estoqueService = estoqueService;
         this.produtoConsultaService = produtoConsultaService;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -38,7 +42,10 @@ public class MovimentoEstoqueService {
                 .tipoMovimento(TipoMovimento.ENTRADA)
                 .criadoEm(LocalDateTime.now())
                 .build();
-        return estoqueMovimentoRepository.save(movimento);
+
+        MovimentoEstoque salvo = estoqueMovimentoRepository.save(movimento);
+        auditService.registrar("MovimentoEstoque", salvo.getId(), TipoOperacao.CREATE, null, salvo);
+        return salvo;
 
     }
     @Transactional
@@ -56,7 +63,10 @@ public class MovimentoEstoqueService {
                 .tipoMovimento(TipoMovimento.SAIDA)
                 .criadoEm(LocalDateTime.now())
                 .build();
-        return estoqueMovimentoRepository.save(movimento);
+
+        MovimentoEstoque salvo = estoqueMovimentoRepository.save(movimento);
+        auditService.registrar("MovimentoEstoque", salvo.getId(), TipoOperacao.CREATE, null, salvo);
+        return salvo;
     }
 
     public List<MovimentoEstoque> listarMovimentosPorProdutoId(Long produtoId){
