@@ -1,5 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.auditoria.AuditService;
+import com.grupo3.AppProdutos.auditoria.TipoOperacao;
 import com.grupo3.AppProdutos.dto.PedidoDTO.ItemPedidoRequest;
 import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoRequest;
 import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoResponse;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -24,12 +27,14 @@ public class PedidoService {
     private final UsuarioRepository usuarioRepository;
     private final ProdutoRepository produtoRepository;
     private final MovimentoEstoqueService movimentoEstoqueService;
+    private final AuditService auditService;
 
-    public PedidoService(PedidoRepository pedidoRepository, UsuarioRepository usuarioRepository, ProdutoRepository produtoRepository, MovimentoEstoqueService movimentoEstoqueService) {
+    public PedidoService(PedidoRepository pedidoRepository, UsuarioRepository usuarioRepository, ProdutoRepository produtoRepository, MovimentoEstoqueService movimentoEstoqueService, AuditService auditService) {
         this.pedidoRepository = pedidoRepository;
         this.usuarioRepository = usuarioRepository;
         this.produtoRepository = produtoRepository;
         this.movimentoEstoqueService = movimentoEstoqueService;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -63,6 +68,7 @@ public class PedidoService {
         }
         pedido.setValorTotal(total);
         pedidoRepository.save(pedido);
+        auditService.registrar("Pedido", pedido.getId(), TipoOperacao.CREATE, null, pedido);
         return PedidoMapper.toResponse(pedido);
     }
 
@@ -95,7 +101,7 @@ public class PedidoService {
                 .orElseThrow(
                         () -> new PedidoNaoEncontradoException(id)
                 );
-
+        Pedido pedidoSemNovoStatus = clonarPedido(pedido);
         StatusPedido statusAtual = pedido.getStatus();
 
         validarTransicao(statusAtual, novoStatus);
@@ -110,7 +116,7 @@ public class PedidoService {
         }
 
         pedidoRepository.save(pedido);
-
+        auditService.registrar("Pedido", pedido.getId(), TipoOperacao.UPDATE, pedidoSemNovoStatus, pedido);
         return PedidoMapper.toResponse(pedido);
     }
 
@@ -178,6 +184,16 @@ public class PedidoService {
                 throw new PedidoImutavelException(atual);
             }
         }
+    }
+
+    private Pedido clonarPedido(Pedido pedido){
+        Pedido pedidoAnterior = new Pedido();
+        pedidoAnterior.setId(pedido.getId());
+        pedidoAnterior.setStatus(pedido.getStatus());
+        pedidoAnterior.setUsuario(pedido.getUsuario());
+        pedidoAnterior.setValorTotal(pedido.getValorTotal());
+        pedidoAnterior.setItens(new ArrayList<>(pedido.getItens()));
+        return pedidoAnterior;
     }
 
 

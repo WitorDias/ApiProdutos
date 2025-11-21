@@ -1,5 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.auditoria.AuditService;
+import com.grupo3.AppProdutos.auditoria.TipoOperacao;
 import com.grupo3.AppProdutos.dto.UsuarioDTO.AtualizarUsuarioRequest;
 import com.grupo3.AppProdutos.dto.UsuarioDTO.CriarUsuarioRequest;
 import com.grupo3.AppProdutos.dto.UsuarioDTO.UsuarioResponse;
@@ -19,11 +21,12 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditService auditService;
 
-
-    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, AuditService auditService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -33,6 +36,8 @@ public class UsuarioService {
         Usuario usuario = UsuarioMapper.toEntity(criarUsuarioRequest);
         usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
         usuarioRepository.save(usuario);
+
+        auditService.registrar("Usuario", usuario.getId(), TipoOperacao.CREATE, null, clonarUsuario(usuario));
 
         return UsuarioMapper.toResponse(usuario);
     }
@@ -57,6 +62,8 @@ public class UsuarioService {
                 () -> new UsuarioNaoEncontradoException(id)
         );
 
+        Usuario antes = clonarUsuario(usuario);
+
         if(request.nome() != null && !request.nome().trim().isEmpty()){
             usuario.setNome(request.nome());
         }
@@ -64,6 +71,8 @@ public class UsuarioService {
         if(request.senha() != null && !request.senha().isEmpty()){
             usuario.setSenha(passwordEncoder.encode(request.senha()));
         }
+
+        auditService.registrar("Usuario", usuario.getId(), TipoOperacao.UPDATE, antes, clonarUsuario(usuario));
 
         usuarioRepository.save(usuario);
         return UsuarioMapper.toResponse(usuario);
@@ -74,8 +83,13 @@ public class UsuarioService {
         var usuario = usuarioRepository.findByIdAndAtivoTrue(id).orElseThrow(
                 () -> new UsuarioNaoEncontradoException(id)
         );
+
+        Usuario antes = clonarUsuario(usuario);
+
         usuario.setAtivo(false);
         usuarioRepository.save(usuario);
+
+        auditService.registrar("Usuario", usuario.getId(), TipoOperacao.DELETE, antes, clonarUsuario(usuario));
     }
 
     public void validarUsuario(CriarUsuarioRequest criarUsuarioRequest){
@@ -83,4 +97,15 @@ public class UsuarioService {
             throw new EmailJaExisteException(criarUsuarioRequest.email());
         }
     }
+
+    private Usuario clonarUsuario(Usuario usuario) {
+        if (usuario == null) return null;
+
+        Usuario clone = new Usuario();
+        clone.setId(usuario.getId());
+        clone.setNome(usuario.getNome());
+        clone.setEmail(usuario.getEmail());
+        return clone;
+    }
+
 }

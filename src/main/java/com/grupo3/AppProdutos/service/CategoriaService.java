@@ -1,5 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.auditoria.AuditService;
+import com.grupo3.AppProdutos.auditoria.TipoOperacao;
 import com.grupo3.AppProdutos.dto.CategoriaDTO.AtualizarCategoriaRequest;
 import com.grupo3.AppProdutos.dto.CategoriaDTO.CriarCategoriaRequest;
 import com.grupo3.AppProdutos.exception.*;
@@ -15,9 +17,11 @@ import java.util.List;
 public class CategoriaService {
 
     private final CategoriaRepository categoriaRepository;
+    private final AuditService auditService;
 
-    public CategoriaService(CategoriaRepository categoriaRepository) {
+    public CategoriaService(CategoriaRepository categoriaRepository, AuditService auditService) {
         this.categoriaRepository = categoriaRepository;
+        this.auditService = auditService;
     }
 
     public List<Categoria> buscarListaDeCategorias(){
@@ -42,6 +46,7 @@ public class CategoriaService {
                 .atualizadoEm(LocalDateTime.now())
                 .build();
 
+        auditService.registrar("Categoria", categoria.getId(), TipoOperacao.CREATE, null, categoria);
         return categoriaRepository.save(categoria);
     }
 
@@ -67,6 +72,8 @@ public class CategoriaService {
             validarDuplicidade(request.nome(), novoParent);
         }
 
+        auditService.registrar("Categoria", categoriaParaAtualizar.getId(), TipoOperacao.UPDATE, categoriaParaAtualizar, request);
+
         categoriaParaAtualizar.setNome(request.nome());
         categoriaParaAtualizar.setParent(novoParent);
         categoriaParaAtualizar.setAtualizadoEm(LocalDateTime.now());
@@ -86,6 +93,7 @@ public class CategoriaService {
             throw new CategoriaComDependenciasException("Não é possível deletar categoria com subcategorias");
         }
 
+        auditService.registrar("Categoria", categoria.getId(), TipoOperacao.DELETE, categoria, null);
         categoriaRepository.delete(categoria);
     }
 
