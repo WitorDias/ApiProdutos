@@ -61,6 +61,8 @@ public class CategoriaService {
 
         var categoriaParaAtualizar = buscarCategoriaPorId(id);
 
+        var estadoAnterior = clonarCategoria(categoriaParaAtualizar);
+
         Categoria novoParent = null;
         if(request.parentId() != null){
             novoParent = buscarCategoriaPorId(request.parentId());
@@ -72,13 +74,15 @@ public class CategoriaService {
             validarDuplicidade(request.nome(), novoParent);
         }
 
-        auditService.registrar("Categoria", categoriaParaAtualizar.getId(), TipoOperacao.UPDATE, categoriaParaAtualizar, request);
-
         categoriaParaAtualizar.setNome(request.nome());
         categoriaParaAtualizar.setParent(novoParent);
         categoriaParaAtualizar.setAtualizadoEm(LocalDateTime.now());
 
-        return categoriaRepository.save(categoriaParaAtualizar);
+        var categoriaAtualizada = categoriaRepository.save(categoriaParaAtualizar);
+
+        auditService.registrar("Categoria", categoriaAtualizada.getId(), TipoOperacao.UPDATE, estadoAnterior, categoriaAtualizada);
+
+        return categoriaAtualizada;
     }
 
     @Transactional
@@ -134,5 +138,15 @@ public class CategoriaService {
             return false;
         }
         return parent1.getId().equals(parent2.getId());
+    }
+
+    private Categoria clonarCategoria(Categoria categoria){
+        var clone = new Categoria();
+        clone.setId(categoria.getId());
+        clone.setNome(categoria.getNome());
+        clone.setParent(categoria.getParent());
+        clone.setCriadoEm(categoria.getCriadoEm());
+        clone.setAtualizadoEm(categoria.getAtualizadoEm());
+        return clone;
     }
 }
