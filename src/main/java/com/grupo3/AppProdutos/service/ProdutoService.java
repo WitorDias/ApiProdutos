@@ -1,5 +1,7 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.auditoria.AuditService;
+import com.grupo3.AppProdutos.auditoria.TipoOperacao;
 import com.grupo3.AppProdutos.dto.ProdutoDTO.CriarProdutoRequest;
 import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoRequest;
 import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoResponse;
@@ -24,12 +26,14 @@ public class ProdutoService {
     private final EstoqueService estoqueService;
     private final ProdutoConsultaService produtoConsultaService;
     private final CategoriaService categoriaService;
+    private final AuditService auditService;
 
-    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, ProdutoConsultaService produtoConsultaService, CategoriaService categoriaService) {
+    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, ProdutoConsultaService produtoConsultaService, CategoriaService categoriaService, AuditService auditService) {
         this.produtoRepository = produtoRepository;
         this.estoqueService = estoqueService;
         this.produtoConsultaService = produtoConsultaService;
         this.categoriaService = categoriaService;
+        this.auditService = auditService;
     }
 
     public List<ProdutoResponse> buscarListaDeProdutos(){
@@ -64,6 +68,8 @@ public class ProdutoService {
         Produto produtoSalvo = produtoRepository.save(produto);
         estoqueService.criarEstoqueParaProduto(produtoSalvo, request.quantidade());
 
+        auditService.registrar("Produto", produto.getId(), TipoOperacao.CREATE, null, produto);
+
         return ProdutoMapper.toResponse(produtoSalvo);
 
     }
@@ -97,6 +103,8 @@ public class ProdutoService {
         produtoParaAtualizar.setAtivo(request.ativo() != null ? request.ativo() : produtoParaAtualizar.getAtivo());
         produtoParaAtualizar.setAtualizadoEm(LocalDateTime.now());
 
+        auditService.registrar("Produto", produtoParaAtualizar.getId(), TipoOperacao.UPDATE, produtoParaAtualizar, request);
+
         return ProdutoMapper.toResponse(produtoRepository.save(produtoParaAtualizar));
     }
 
@@ -105,6 +113,7 @@ public class ProdutoService {
         var produto = buscarProdutoPorEntidade(id);
         produto.setAtivo(false);
         produto.setAtualizadoEm(LocalDateTime.now());
+        auditService.registrar("Produto", id, TipoOperacao.DELETE, produto, null);
         produtoRepository.save(produto);
     }
 

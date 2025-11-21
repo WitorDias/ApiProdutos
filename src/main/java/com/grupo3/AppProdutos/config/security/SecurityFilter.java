@@ -7,6 +7,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -17,9 +19,10 @@ import java.io.IOException;
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
 
-    private TokenService tokenService;
+    private static final Logger logger = LoggerFactory.getLogger(SecurityFilter.class);
 
-    private UsuarioRepository usuarioRepository;
+    private final TokenService tokenService;
+    private final UsuarioRepository usuarioRepository;
 
     public SecurityFilter(TokenService tokenService, UsuarioRepository usuarioRepository) {
         this.tokenService = tokenService;
@@ -27,33 +30,51 @@ public class SecurityFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        var token = this.recoverToken(request);
-        if (token != null) {
-            var subject = tokenService.validarToken(token);
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
-            if (subject != null) {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+
+            String token = recoverToken(request);
+
+            if (token != null) {
                 try {
-                    Long usuarioId = Long.parseLong(subject);
-                    Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
+                    String subject = tokenService.validarToken(token);
 
-                    if (usuario != null) {
-                        var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    if (subject != null) {
+                        Long usuarioId = Long.parseLong(subject);
+                        Usuario usuario = usuarioRepository.findById(usuarioId).orElse(null);
+
+                        if (usuario != null) {
+                            UsernamePasswordAuthenticationToken authentication =
+                                    new UsernamePasswordAuthenticationToken(
+                                            usuario,
+                                            null,
+                                            usuario.getAuthorities()
+                                    );
+
+                            SecurityContextHolder.getContext().setAuthentication(authentication);
+                        }
                     }
-                } catch (NumberFormatException e) {
+
+                } catch (Exception e) {
+                    logger.error("Erro ao validar token: {}", e.getMessage());
                 }
             }
         }
+
         filterChain.doFilter(request, response);
     }
 
     private String recoverToken(HttpServletRequest request) {
-        var authHeader = request.getHeader("Authorization");
-        if (authHeader != null) {
-            return authHeader.replace("Bearer ", "");
-        } else {
-            return null;
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
         }
+
+        return null;
     }
 }
