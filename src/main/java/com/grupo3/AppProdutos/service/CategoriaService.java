@@ -2,6 +2,7 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.auditoria.AuditService;
 import com.grupo3.AppProdutos.auditoria.TipoOperacao;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.CategoriaAuditDTO;
 import com.grupo3.AppProdutos.dto.CategoriaDTO.AtualizarCategoriaRequest;
 import com.grupo3.AppProdutos.dto.CategoriaDTO.CriarCategoriaRequest;
 import com.grupo3.AppProdutos.exception.*;
@@ -46,8 +47,9 @@ public class CategoriaService {
                 .atualizadoEm(LocalDateTime.now())
                 .build();
 
-        auditService.registrar("Categoria", categoria.getId(), TipoOperacao.CREATE, null, categoria);
-        return categoriaRepository.save(categoria);
+        Categoria categoriaSalva = categoriaRepository.save(categoria);
+        auditService.registrar("Categoria", categoriaSalva.getId(), TipoOperacao.CREATE, null, toCategoriaAuditDTO(categoriaSalva));
+        return categoriaSalva;
     }
 
     public Categoria buscarCategoriaPorId(Long id){
@@ -61,7 +63,8 @@ public class CategoriaService {
 
         var categoriaParaAtualizar = buscarCategoriaPorId(id);
 
-        var estadoAnterior = clonarCategoria(categoriaParaAtualizar);
+        // Captura estado anterior para auditoria
+        CategoriaAuditDTO estadoAnterior = toCategoriaAuditDTO(categoriaParaAtualizar);
 
         Categoria novoParent = null;
         if(request.parentId() != null){
@@ -80,7 +83,7 @@ public class CategoriaService {
 
         var categoriaAtualizada = categoriaRepository.save(categoriaParaAtualizar);
 
-        auditService.registrar("Categoria", categoriaAtualizada.getId(), TipoOperacao.UPDATE, estadoAnterior, categoriaAtualizada);
+        auditService.registrar("Categoria", categoriaAtualizada.getId(), TipoOperacao.UPDATE, estadoAnterior, toCategoriaAuditDTO(categoriaAtualizada));
 
         return categoriaAtualizada;
     }
@@ -97,7 +100,7 @@ public class CategoriaService {
             throw new CategoriaComDependenciasException("Não é possível deletar categoria com subcategorias");
         }
 
-        auditService.registrar("Categoria", categoria.getId(), TipoOperacao.DELETE, categoria, null);
+        auditService.registrar("Categoria", categoria.getId(), TipoOperacao.DELETE, toCategoriaAuditDTO(categoria), null);
         categoriaRepository.delete(categoria);
     }
 
@@ -140,13 +143,14 @@ public class CategoriaService {
         return parent1.getId().equals(parent2.getId());
     }
 
-    private Categoria clonarCategoria(Categoria categoria){
-        var clone = new Categoria();
-        clone.setId(categoria.getId());
-        clone.setNome(categoria.getNome());
-        clone.setParent(categoria.getParent());
-        clone.setCriadoEm(categoria.getCriadoEm());
-        clone.setAtualizadoEm(categoria.getAtualizadoEm());
-        return clone;
+    private CategoriaAuditDTO toCategoriaAuditDTO(Categoria categoria) {
+        return new CategoriaAuditDTO(
+                categoria.getId(),
+                categoria.getNome(),
+                categoria.getParent() != null ? categoria.getParent().getId() : null,
+                categoria.getParent() != null ? categoria.getParent().getNome() : null,
+                categoria.getCriadoEm(),
+                categoria.getAtualizadoEm()
+        );
     }
 }

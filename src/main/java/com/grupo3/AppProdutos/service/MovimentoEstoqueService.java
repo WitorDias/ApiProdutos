@@ -2,6 +2,7 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.auditoria.AuditService;
 import com.grupo3.AppProdutos.auditoria.TipoOperacao;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.MovimentoEstoqueAuditDTO;
 import com.grupo3.AppProdutos.exception.EstoqueInsuficienteException;
 import com.grupo3.AppProdutos.exception.QuantidadeInvalidaException;
 import com.grupo3.AppProdutos.model.Estoque;
@@ -44,7 +45,7 @@ public class MovimentoEstoqueService {
                 .build();
 
         MovimentoEstoque salvo = estoqueMovimentoRepository.save(movimento);
-        auditService.registrar("MovimentoEstoque", salvo.getId(), TipoOperacao.CREATE, null, salvo);
+        auditService.registrar("MovimentoEstoque", salvo.getId(), TipoOperacao.CREATE, null, toMovimentoAuditDTO(salvo));
         return salvo;
 
     }
@@ -65,7 +66,7 @@ public class MovimentoEstoqueService {
                 .build();
 
         MovimentoEstoque salvo = estoqueMovimentoRepository.save(movimento);
-        auditService.registrar("MovimentoEstoque", salvo.getId(), TipoOperacao.CREATE, null, salvo);
+        auditService.registrar("MovimentoEstoque", salvo.getId(), TipoOperacao.CREATE, null, toMovimentoAuditDTO(salvo));
         return salvo;
     }
 
@@ -80,5 +81,16 @@ public class MovimentoEstoqueService {
             throw new QuantidadeInvalidaException("A quantidade deve ser maior que 0.");
         }
 
+    }
+
+    private MovimentoEstoqueAuditDTO toMovimentoAuditDTO(MovimentoEstoque movimento) {
+        return new MovimentoEstoqueAuditDTO(
+                movimento.getId(),
+                movimento.getProduto().getId(),
+                movimento.getProduto().getNome(),
+                movimento.getQuantidade(),
+                movimento.getTipoMovimento(),
+                movimento.getCriadoEm()
+        );
     }
 }
