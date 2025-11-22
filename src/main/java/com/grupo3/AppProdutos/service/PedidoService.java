@@ -2,6 +2,8 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.auditoria.AuditService;
 import com.grupo3.AppProdutos.auditoria.TipoOperacao;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.ItemPedidoAuditDTO;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.PedidoAuditDTO;
 import com.grupo3.AppProdutos.dto.PedidoDTO.ItemPedidoRequest;
 import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoRequest;
 import com.grupo3.AppProdutos.dto.PedidoDTO.PedidoResponse;
@@ -17,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -68,7 +69,7 @@ public class PedidoService {
         }
         pedido.setValorTotal(total);
         pedidoRepository.save(pedido);
-        auditService.registrar("Pedido", pedido.getId(), TipoOperacao.CREATE, null, pedido);
+        auditService.registrar("Pedido", pedido.getId(), TipoOperacao.CREATE, null, toPedidoAuditDTO(pedido));
         return PedidoMapper.toResponse(pedido);
     }
 
@@ -101,7 +102,8 @@ public class PedidoService {
                 .orElseThrow(
                         () -> new PedidoNaoEncontradoException(id)
                 );
-        Pedido pedidoSemNovoStatus = clonarPedido(pedido);
+
+        PedidoAuditDTO estadoAnterior = toPedidoAuditDTO(pedido);
         StatusPedido statusAtual = pedido.getStatus();
 
         validarTransicao(statusAtual, novoStatus);
@@ -116,7 +118,7 @@ public class PedidoService {
         }
 
         pedidoRepository.save(pedido);
-        auditService.registrar("Pedido", pedido.getId(), TipoOperacao.UPDATE, pedidoSemNovoStatus, pedido);
+        auditService.registrar("Pedido", pedido.getId(), TipoOperacao.UPDATE, estadoAnterior, toPedidoAuditDTO(pedido));
         return PedidoMapper.toResponse(pedido);
     }
 
@@ -186,15 +188,30 @@ public class PedidoService {
         }
     }
 
-    private Pedido clonarPedido(Pedido pedido){
-        Pedido pedidoAnterior = new Pedido();
-        pedidoAnterior.setId(pedido.getId());
-        pedidoAnterior.setStatus(pedido.getStatus());
-        pedidoAnterior.setUsuario(pedido.getUsuario());
-        pedidoAnterior.setValorTotal(pedido.getValorTotal());
-        pedidoAnterior.setItens(new ArrayList<>(pedido.getItens()));
-        return pedidoAnterior;
+    private PedidoAuditDTO toPedidoAuditDTO(Pedido pedido) {
+        return new PedidoAuditDTO(
+                pedido.getId(),
+                pedido.getUsuario().getId(),
+                pedido.getUsuario().getEmail(),
+                pedido.getValorTotal(),
+                pedido.getStatus(),
+                pedido.getCriadoEm(),
+                pedido.getItens().stream()
+                        .map(this::toItemPedidoAuditDTO)
+                        .toList()
+        );
     }
 
+    private ItemPedidoAuditDTO toItemPedidoAuditDTO(ItemPedido item) {
+        return new ItemPedidoAuditDTO(
+                item.getId(),
+                item.getPedido().getId(),
+                item.getProduto().getId(),
+                item.getProduto().getNome(),
+                item.getQuantidade(),
+                item.getPrecoUnitario(),
+                item.getPrecoTotal()
+        );
+    }
 
 }
