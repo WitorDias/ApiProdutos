@@ -2,6 +2,10 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.auditoria.AuditService;
 import com.grupo3.AppProdutos.auditoria.TipoOperacao;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.CarrinhoAuditDTO;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.ItemCarrinhoAuditDTO;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.ItemPedidoAuditDTO;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.PedidoAuditDTO;
 import com.grupo3.AppProdutos.dto.CarrinhoDTO.AdicionarItemCarrinhoRequest;
 import com.grupo3.AppProdutos.dto.CarrinhoDTO.AtualizarItemCarrinhoRequest;
 import com.grupo3.AppProdutos.dto.CarrinhoDTO.CarrinhoResponse;
@@ -66,12 +70,12 @@ public class CarrinhoService {
                 throw new EstoqueInsuficienteException(estoque.getQuantidade(), quantidadeTotal);
             }
 
-            ItemCarrinho antigo = clonarItemCarrinho(item);
+            ItemCarrinhoAuditDTO estadoAnterior = toItemAuditDTO(item);
 
             item.setQuantidade(quantidadeTotal);
             itemCarrinhoRepository.save(item);
 
-            auditService.registrar("ItemCarrinho", item.getId(), TipoOperacao.UPDATE, antigo, item);
+            auditService.registrar("ItemCarrinho", item.getId(), TipoOperacao.UPDATE, estadoAnterior, toItemAuditDTO(item));
 
         } else {
             if (request.quantidade() > estoque.getQuantidade()) {
@@ -85,13 +89,13 @@ public class CarrinhoService {
                     .capturaPreco(produto.getPreco())
                     .build();
             itemCarrinhoRepository.save(novoItem);
-            auditService.registrar("ItemCarrinho", novoItem.getId(), TipoOperacao.CREATE, null, novoItem);
+            auditService.registrar("ItemCarrinho", novoItem.getId(), TipoOperacao.CREATE, null, toItemAuditDTO(novoItem));
         }
 
         carrinho = carrinhoRepository.findById(carrinho.getId())
                 .orElseThrow(CarrinhoNaoEncontradoException::new);
 
-        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, null, carrinho);
+        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, null, toAuditDTO(carrinho));
         return carrinhoMapper.toResponse(carrinho);
     }
 
@@ -114,14 +118,11 @@ public class CarrinhoService {
             throw new EstoqueInsuficienteException(estoque.getQuantidade(), request.quantidade());
         }
 
-        ItemCarrinho antigo = clonarItemCarrinho(item);
+        ItemCarrinhoAuditDTO estadoAnterior = toItemAuditDTO(item);
         item.setQuantidade(request.quantidade());
         itemCarrinhoRepository.save(item);
 
-        auditService.registrar("ItemCarrinho", item.getId(), TipoOperacao.UPDATE, antigo, item);
-
-        carrinho = carrinhoRepository.findById(carrinho.getId())
-                .orElseThrow(CarrinhoNaoEncontradoException::new);
+        auditService.registrar("ItemCarrinho", item.getId(), TipoOperacao.UPDATE, estadoAnterior, toItemAuditDTO(item));
 
         return carrinhoMapper.toResponse(carrinho);
     }
@@ -137,17 +138,14 @@ public class CarrinhoService {
         ItemCarrinho item = itemCarrinhoRepository.findByCarrinhoAndProduto(carrinho, produto)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado no carrinho"));
 
-        ItemCarrinho antigo = clonarItemCarrinho(item);
+        ItemCarrinhoAuditDTO estadoAnterior = toItemAuditDTO(item);
 
         carrinho.getItens().remove(item);
         itemCarrinhoRepository.delete(item);
         itemCarrinhoRepository.flush();
 
-        auditService.registrar("ItemCarrinho", antigo.getId(), TipoOperacao.DELETE, antigo, null);
-        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, null, carrinho);
-
-        carrinho = carrinhoRepository.findById(carrinho.getId())
-                .orElseThrow(CarrinhoNaoEncontradoException::new);
+        auditService.registrar("ItemCarrinho", estadoAnterior.id(), TipoOperacao.DELETE, estadoAnterior, null);
+        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, null, toAuditDTO(carrinho));
 
         return carrinhoMapper.toResponse(carrinho);
     }
@@ -159,7 +157,7 @@ public class CarrinhoService {
                 .orElseThrow(() -> new IllegalArgumentException("Nenhum carrinho ativo encontrado"));
 
         for (ItemCarrinho item : carrinho.getItens()) {
-            auditService.registrar("ItemCarrinho", item.getId(), TipoOperacao.DELETE, clonarItemCarrinho(item), null);
+            auditService.registrar("ItemCarrinho", item.getId(), TipoOperacao.DELETE, toItemAuditDTO(item), null);
         }
 
         itemCarrinhoRepository.deleteAll(carrinho.getItens());
@@ -174,6 +172,9 @@ public class CarrinhoService {
         if (carrinho.getItens().isEmpty()) {
             throw new CarrinhoVazioException();
         }
+
+        // Captura estado anterior do carrinho antes de finalizar
+        CarrinhoAuditDTO carrinhoAnterior = toAuditDTO(carrinho);
 
         Pedido pedido = new Pedido();
         pedido.setUsuario(usuario);
@@ -199,8 +200,8 @@ public class CarrinhoService {
         carrinho.setStatusCarrinho(StatusCarrinho.FINALIZADO);
         carrinhoRepository.save(carrinho);
 
-        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, null, carrinho);
-        auditService.registrar("Pedido", pedido.getId(), TipoOperacao.CREATE, null, pedido);
+        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, carrinhoAnterior, toAuditDTO(carrinho));
+        auditService.registrar("Pedido", pedido.getId(), TipoOperacao.CREATE, null, toPedidoAuditDTO(pedido));
 
         return pedido.getId();
     }
@@ -211,12 +212,12 @@ public class CarrinhoService {
         Carrinho carrinho = carrinhoRepository.findByUsuarioAndStatusCarrinho(usuario, StatusCarrinho.ABERTO)
                 .orElseThrow(CarrinhoNaoEncontradoException::new);
 
-        Carrinho antigo = clonarCarrinho(carrinho);
+        CarrinhoAuditDTO estadoAnterior = toAuditDTO(carrinho);
 
         carrinho.setStatusCarrinho(StatusCarrinho.CANCELADO);
         carrinhoRepository.save(carrinho);
 
-        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, antigo, carrinho);
+        auditService.registrar("Carrinho", carrinho.getId(), TipoOperacao.UPDATE, estadoAnterior, toAuditDTO(carrinho));
     }
 
     private Usuario buscarUsuario(Long usuarioId) {
@@ -242,7 +243,7 @@ public class CarrinhoService {
 
 
         Carrinho salvo = carrinhoRepository.save(novoCarrinho);
-        auditService.registrar("Carrinho", salvo.getId(), TipoOperacao.CREATE, null, clonarCarrinho(salvo));
+        auditService.registrar("Carrinho", salvo.getId(), TipoOperacao.CREATE, null, toAuditDTO(salvo));
 
         return salvo;
     }
@@ -253,25 +254,56 @@ public class CarrinhoService {
             throw new QuantidadeInvalidaException("A quantidade deve ser maior que 0");
         }
     }
-    private Carrinho clonarCarrinho(Carrinho carrinho){
-        return Carrinho.builder()
-                .id(carrinho.getId())
-                .usuario(carrinho.getUsuario())
-                .statusCarrinho(carrinho.getStatusCarrinho())
-                .criadoEm(carrinho.getCriadoEm())
-                .atualizadoEm(carrinho.getAtualizadoEm())
-                .itens(carrinho.getItens())
-                .build();
 
+    private CarrinhoAuditDTO toAuditDTO(Carrinho carrinho) {
+        return new CarrinhoAuditDTO(
+                carrinho.getId(),
+                carrinho.getUsuario().getId(),
+                carrinho.getUsuario().getEmail(),
+                carrinho.getStatusCarrinho(),
+                carrinho.getCriadoEm(),
+                carrinho.getAtualizadoEm(),
+                carrinho.getItens().stream()
+                        .map(this::toItemAuditDTO)
+                        .toList()
+        );
     }
-    private ItemCarrinho clonarItemCarrinho(ItemCarrinho item) {
-        return ItemCarrinho.builder()
-                .id(item.getId())
-                .carrinho(item.getCarrinho())
-                .produto(item.getProduto())
-                .quantidade(item.getQuantidade())
-                .capturaPreco(item.getCapturaPreco())
-                .build();
+
+    private ItemCarrinhoAuditDTO toItemAuditDTO(ItemCarrinho item) {
+        return new ItemCarrinhoAuditDTO(
+                item.getId(),
+                item.getCarrinho().getId(),
+                item.getProduto().getId(),
+                item.getProduto().getNome(),
+                item.getQuantidade(),
+                item.getCapturaPreco()
+        );
+    }
+
+    private PedidoAuditDTO toPedidoAuditDTO(Pedido pedido) {
+        return new PedidoAuditDTO(
+                pedido.getId(),
+                pedido.getUsuario().getId(),
+                pedido.getUsuario().getEmail(),
+                pedido.getValorTotal(),
+                pedido.getStatus(),
+                pedido.getCriadoEm(),
+                pedido.getItens().stream()
+                        .map(this::toItemPedidoAuditDTO)
+                        .toList()
+        );
+    }
+
+    private ItemPedidoAuditDTO toItemPedidoAuditDTO(ItemPedido item) {
+        return new ItemPedidoAuditDTO(
+                item.getId(),
+                item.getPedido().getId(),
+                item.getProduto().getId(),
+                item.getProduto().getNome(),
+                item.getQuantidade(),
+                item.getPrecoUnitario(),
+                item.getPrecoTotal()
+        );
     }
 
 }
