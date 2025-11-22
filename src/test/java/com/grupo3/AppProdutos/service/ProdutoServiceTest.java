@@ -12,6 +12,7 @@ import com.grupo3.AppProdutos.model.Categoria;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -48,6 +49,7 @@ class ProdutoServiceTest {
     private ProdutoService produtoService;
 
     @Test
+    @DisplayName("Deve buscar lista de produtos ativos")
     void deveBuscarListaDeProdutos() {
 
         Categoria categoria = Categoria.builder()
@@ -73,6 +75,7 @@ class ProdutoServiceTest {
     }
 
     @Test
+    @DisplayName("Deve salvar produto com sucesso")
     void deveSalvarProdutoComSucesso() {
 
         ProdutoRequest produtoRequest = new ProdutoRequest(
@@ -106,7 +109,8 @@ class ProdutoServiceTest {
     }
 
     @Test
-    void deveLancarExcecaoQuandoSkuJaExiste() {
+    @DisplayName("Deve lançar exceção quando SKU já existe")
+    void deveLancarSkuJaExisteException() {
 
         ProdutoRequest req = new ProdutoRequest(
                 "Teste", "Desc", BigDecimal.ONE, "SKU_DUP", 2L, true
@@ -123,7 +127,8 @@ class ProdutoServiceTest {
     }
 
     @Test
-    void deveLancarErroQuandoQuantidadeInvalida() {
+    @DisplayName("Deve lançar erro quando quantidade inicial é inválida")
+    void deveLancarValidacaoProdutoException() {
 
         ProdutoRequest req = new ProdutoRequest("A", "B", BigDecimal.TEN, "SKU", 1L, true);
 
@@ -134,6 +139,7 @@ class ProdutoServiceTest {
     }
 
     @Test
+    @DisplayName("Deve buscar produto por ID")
     void deveBuscarProdutoPorId() {
         Categoria categoria = Categoria.builder()
                 .id(1L)
@@ -157,6 +163,7 @@ class ProdutoServiceTest {
     }
 
     @Test
+    @DisplayName("Deve lançar CategoriaNaoEncontradaException ao salvar produto com categoria inválida")
     void deveLancarCategoriaNaoEncontradaException() {
 
         ProdutoRequest produtoRequest = new ProdutoRequest(
@@ -180,6 +187,7 @@ class ProdutoServiceTest {
     }
 
     @Test
+    @DisplayName("Deve atualizar produto com sucesso")
     void deveAtualizarProdutoComSucesso() {
         Produto produto = Produto.builder()
                 .id(1L).nome("Antigo")
@@ -212,7 +220,8 @@ class ProdutoServiceTest {
     }
 
     @Test
-    void deveLancarErroQuandoAtualizarComPrecoInvalido() {
+    @DisplayName("Deve lançar erro ao atualizar produto com preço inválido")
+    void deveLancarValidacaoProdutoExceptionQuandoAtualizarComPrecoInvalido() {
 
         ProdutoRequest request = new ProdutoRequest(
                 "X", "Y", BigDecimal.valueOf(-1), "SKU", 1L, true
@@ -223,6 +232,7 @@ class ProdutoServiceTest {
     }
 
     @Test
+    @DisplayName("Deve deletar produto com sucesso")
     void deveDeletarProduto() {
         Categoria categoria = Categoria.builder().build();
         Produto produto = Produto.builder()
