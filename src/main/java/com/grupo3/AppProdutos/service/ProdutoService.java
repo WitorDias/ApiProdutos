@@ -68,7 +68,7 @@ public class ProdutoService {
         Produto produtoSalvo = produtoRepository.save(produto);
         estoqueService.criarEstoqueParaProduto(produtoSalvo, request.quantidade());
 
-        auditService.registrar("Produto", produto.getId(), TipoOperacao.CREATE, null, produto);
+        auditService.registrar("Produto", produtoSalvo.getId(), TipoOperacao.CREATE, null, ProdutoMapper.toResponse(produtoSalvo));
 
         return ProdutoMapper.toResponse(produtoSalvo);
 
@@ -93,8 +93,11 @@ public class ProdutoService {
         }
 
         var produtoParaAtualizar = buscarProdutoPorEntidade(id);
+
+        // Captura estado anterior ANTES das alterações
+        ProdutoResponse estadoAnterior = ProdutoMapper.toResponse(produtoParaAtualizar);
+
         var categoria = categoriaService.buscarCategoriaPorId(request.categoriaId());
-        auditService.registrar("Produto", produtoParaAtualizar.getId(), TipoOperacao.UPDATE, produtoParaAtualizar, request);
 
         produtoParaAtualizar.setNome(request.nome());
         produtoParaAtualizar.setDescricao(request.descricao());
@@ -104,16 +107,24 @@ public class ProdutoService {
         produtoParaAtualizar.setAtivo(request.ativo() != null ? request.ativo() : produtoParaAtualizar.getAtivo());
         produtoParaAtualizar.setAtualizadoEm(LocalDateTime.now());
 
-        return ProdutoMapper.toResponse(produtoRepository.save(produtoParaAtualizar));
+        Produto produtoAtualizado = produtoRepository.save(produtoParaAtualizar);
+        auditService.registrar("Produto", produtoAtualizado.getId(), TipoOperacao.UPDATE, estadoAnterior, ProdutoMapper.toResponse(produtoAtualizado));
+
+        return ProdutoMapper.toResponse(produtoAtualizado);
     }
 
     @Transactional
     public void deletarProduto(Long id){
         var produto = buscarProdutoPorEntidade(id);
+
+        // Captura estado anterior ANTES da desativação
+        ProdutoResponse estadoAnterior = ProdutoMapper.toResponse(produto);
+
         produto.setAtivo(false);
         produto.setAtualizadoEm(LocalDateTime.now());
-        auditService.registrar("Produto", id, TipoOperacao.DELETE, produto, null);
         produtoRepository.save(produto);
+
+        auditService.registrar("Produto", id, TipoOperacao.DELETE, estadoAnterior, null);
     }
 
     private void validarProdutoRequest(ProdutoRequest produtoRequest){

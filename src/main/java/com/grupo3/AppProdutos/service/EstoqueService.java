@@ -2,6 +2,7 @@ package com.grupo3.AppProdutos.service;
 
 import com.grupo3.AppProdutos.auditoria.AuditService;
 import com.grupo3.AppProdutos.auditoria.TipoOperacao;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.EstoqueAuditDTO;
 import com.grupo3.AppProdutos.exception.EstoqueNaoEncontradoException;
 import com.grupo3.AppProdutos.exception.QuantidadeEstoqueInvalidaException;
 import com.grupo3.AppProdutos.model.Estoque;
@@ -37,8 +38,9 @@ public class EstoqueService {
                 .atualizadoEm(LocalDateTime.now())
                 .build();
 
-        auditService.registrar("Estoque", estoque.getId(), TipoOperacao.CREATE, null, estoque);
-        return estoqueRepository.save(estoque);
+        Estoque estoqueSalvo = estoqueRepository.save(estoque);
+        auditService.registrar("Estoque", estoqueSalvo.getId(), TipoOperacao.CREATE, null, toEstoqueAuditDTO(estoqueSalvo));
+        return estoqueSalvo;
     }
 
     public Estoque buscarEstoquePorProdutoId(Long produtoId){
@@ -55,12 +57,16 @@ public class EstoqueService {
 
         validarQuantidade(novaQuantidade);
         Estoque estoque = buscarEstoquePorProdutoId(produtoId);
-        Estoque estoqueSemAlterarQuantidade = clonarEstoque(estoque);
+
+        // Captura estado anterior ANTES das alterações
+        EstoqueAuditDTO estadoAnterior = toEstoqueAuditDTO(estoque);
+
         estoque.setQuantidade(novaQuantidade);
         estoque.setAtualizadoEm(LocalDateTime.now());
 
-        auditService.registrar("Estoque", estoque.getId(), TipoOperacao.UPDATE, estoqueSemAlterarQuantidade, estoque);
-        return estoqueRepository.save(estoque);
+        Estoque estoqueAtualizado = estoqueRepository.save(estoque);
+        auditService.registrar("Estoque", estoqueAtualizado.getId(), TipoOperacao.UPDATE, estadoAnterior, toEstoqueAuditDTO(estoqueAtualizado));
+        return estoqueAtualizado;
     }
 
     private void validarQuantidade(Integer quantidade){
@@ -71,13 +77,15 @@ public class EstoqueService {
 
     }
 
-    private Estoque clonarEstoque(Estoque estoque){
-        return Estoque.builder()
-                .produto(estoque.getProduto())
-                .quantidade(estoque.getQuantidade())
-                .criadoEm(estoque.getCriadoEm())
-                .atualizadoEm(estoque.getAtualizadoEm())
-                .build();
+    private EstoqueAuditDTO toEstoqueAuditDTO(Estoque estoque) {
+        return new EstoqueAuditDTO(
+                estoque.getId(),
+                estoque.getProduto().getId(),
+                estoque.getProduto().getNome(),
+                estoque.getQuantidade(),
+                estoque.getCriadoEm(),
+                estoque.getAtualizadoEm()
+        );
     }
 
 }
