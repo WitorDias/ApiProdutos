@@ -1,5 +1,6 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.auditoria.AuditService;
 import com.grupo3.AppProdutos.dto.CategoriaDTO.AtualizarCategoriaRequest;
 import com.grupo3.AppProdutos.dto.CategoriaDTO.CriarCategoriaRequest;
 import com.grupo3.AppProdutos.exception.*;
@@ -27,6 +28,9 @@ class CategoriaServiceTest {
 
     @Mock
     private CategoriaRepository categoriaRepository;
+
+    @Mock
+    private AuditService auditService;
 
     @InjectMocks
     private CategoriaService categoriaService;
