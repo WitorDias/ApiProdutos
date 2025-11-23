@@ -553,8 +553,8 @@ A aplicação implementa três níveis de acesso:
 
 | Role | Descrição | Permissões |
 |------|-----------|------------|
-| **CLIENTE** | Usuário padrão | - Visualizar produtos e categorias<br>- Gerenciar próprio carrinho<br>- Criar e visualizar próprios pedidos |
-| **VENDEDOR** | Vendedor/Operador | - Todas de CLIENTE<br>- Criar e editar produtos próprios<br>- Registrar movimentações de estoque<br>- Visualizar histórico de estoque |
+| **CLIENTE** | Usuário padrão | - Visualizar produtos e categorias<br>- Gerenciar carrinho<br>- Criar e visualizar pedidos |
+| **VENDEDOR** | Vendedor/Operador | - Todas de CLIENTE<br>- Criar e editar produtos <br>- Registrar movimentações de estoque<br>- Visualizar histórico de estoque |
 | **ADMIN** | Administrador | - Todas as permissões<br>- Gerenciar usuários<br>- Gerenciar categorias<br>- Acesso completo a produtos<br>- Visualizar auditoria |
 
 ### Fluxo de Autenticação
@@ -1372,6 +1372,70 @@ SOFTWARE.
 🚀 **Status**: Produção  
 📅 **Última Atualização**: Novembro 2025  
 👥 **Mantenedores Ativos**: 3
+
+---
+
+##  🚀 Planos Futuros
+
+Esta seção descreve funcionalidades e melhorias planejadas para as próximas versões da API, visando ampliar a robustez, escalabilidade e experiência de uso do sistema.
+
+🛒 Multi-Seller
+
+- Permitir que cada vendedor gerencie seus próprios produtos, mantendo segregação total de catálogo, estoque e pedidos por vendedor.
+
+🔔 Notificações de Eventos
+
+- Enviar notificações por e-mail ou webhook sempre que um pedido mudar de status (ex.: aprovado, enviado, entregue).
+- Possibilitar integrações com plataformas externas e automações.
+
+⏰ Agendamentos e Alertas
+
+- Implementar um Scheduler (Spring Scheduling) para:
+- Monitorar estoques diariamente.
+- Enviar alertas automáticos quando algum produto estiver com estoque baixo.
+
+⚡ Caching com Redis
+
+- Introduzir Redis Cache para acelerar consultas do catálogo de produtos e reduzir carga no banco de dados.
+
+🛍️ Carrinho Único por Cliente
+
+- Garantir que cada cliente autenticado terá exatamente um carrinho ativo, podendo criar, atualizar e finalizar apenas o próprio carrinho.
+- Impedir visualização ou manipulação de carrinhos de outros usuários.
+
+💸 Promoções e Cupons
+
+- Criar uma área administrativa para:
+- Gerenciar promoções, regras de desconto e cupons aplicáveis ao carrinho ou aos produtos.
+- Registrar histórico e limites de uso.
+
+⭐ Avaliações de Produtos
+
+- Implementar sistema de avaliações:
+- Apenas clientes que receberam o produto poderão avaliar.
+- Suporte a notas, comentários e média de avaliações por produto.
+
+📈 Produtos Mais Vendidos
+
+- Criar endpoint para exibir:
+- Produtos mais vendidos por período.
+- Ranking geral ou por categoria.
+- Métricas de conversão e desempenho.
+
+💰 Faturamento por Período
+
+- Criar relatórios para acompanhar o faturamento total por dia, semana, mês ou ano.
+- Possibilitar filtros por vendedor (quando multi-seller estiver implementado).
+
+📉 Monitoramento de Estoque Baixo
+
+- Expor lista de produtos com estoque baixo.
+- Automatizar envio de notificações internas (e-mail ou webhook) para alertar vendedores ou administradores.
+
+🔥 Promoções Mais Utilizadas
+
+- Criar relatório de promoções e cupons mais utilizados pelos clientes, ajudando a identificar estratégias com maior impacto nas vendas.
+
 
 ---
 
