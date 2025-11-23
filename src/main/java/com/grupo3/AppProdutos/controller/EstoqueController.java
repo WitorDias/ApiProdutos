@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,6 +54,7 @@ public class EstoqueController {
                     content = @Content
             )
     })
+    @PreAuthorize("hasAnyRole('ADMIN','VENDEDOR')")
     @GetMapping("{produtoId}")
     public ResponseEntity<Estoque> consultarEstoque(@PathVariable Long produtoId){
         return ResponseEntity
