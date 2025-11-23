@@ -818,7 +818,7 @@ Deletar categoria
 
 #### GET `/v1/estoque/{produtoId}`
 Consultar estoque de produto
-- **Auth**: Autenticado (qualquer role)
+- **Auth**: ADMIN, VENDEDOR
 
 **Response (200):**
 ```json
@@ -1117,18 +1117,18 @@ Localização: `src/main/resources/db/migration/`
 
 | Versão | Arquivo                                  | Descrição                              |
 |--------|------------------------------------------|----------------------------------------|
-| V1 | `V1__criar_tabela_produto.sql`           | Criação da tabela de produtos          |
-| V2 | `V2__criar_tabela_estoque.sql`           | Criação da tabela de estoque           |
-| V3 | `V3__criar_tabela_estoque_movimento.sql` | Criação da tabela de movimentações     |
-| V4 | `V4__criar_tabela_categoria.sql`         | Criação da tabela de categorias        |
-| V5 | `V5__criar_tabela_usuario.sql`           | Criação da tabela de usuários          |
-| V6 | `V6__criar_tabela_pedido.sql`            | Criação da tabela de pedidos           |
-| V7 | `V7__criar_tabela_item_pedido.sql`       | Criação da tabela de itens do pedido   |
-| V8 | `V8__criar_tabela_carrinhos.sql`         | Criação da tabela de carrinhos         |
-| V9 | `V9__criar_tabela_carrinho_itens.sql`    | Criação da tabela de itens do carrinho |
-| V10 | `V10__criar_tabela_usuario_roles.sql`    | Criação da tabela de roles             |
-| V11 | `V11__criar_tabela_audit_log.sql`        | Criação da tabela de auditoria         |
-| V11 | `V12__insert_categorias_produto.sql`     | Inserção de dados nas tabelas          |
+| V1     | `V1__criar_tabela_produto.sql`           | Criação da tabela de produtos          |
+| V2     | `V2__criar_tabela_estoque.sql`           | Criação da tabela de estoque           |
+| V3     | `V3__criar_tabela_estoque_movimento.sql` | Criação da tabela de movimentações     |
+| V4     | `V4__criar_tabela_categoria.sql`         | Criação da tabela de categorias        |
+| V5     | `V5__criar_tabela_usuario.sql`           | Criação da tabela de usuários          |
+| V6     | `V6__criar_tabela_pedido.sql`            | Criação da tabela de pedidos           |
+| V7     | `V7__criar_tabela_item_pedido.sql`       | Criação da tabela de itens do pedido   |
+| V8     | `V8__criar_tabela_carrinhos.sql`         | Criação da tabela de carrinhos         |
+| V9     | `V9__criar_tabela_carrinho_itens.sql`    | Criação da tabela de itens do carrinho |
+| V10    | `V10__criar_tabela_usuario_roles.sql`    | Criação da tabela de roles             |
+| V11    | `V11__criar_tabela_audit_log.sql`        | Criação da tabela de auditoria         |
+| V12    | `V12__insert_categorias_produto.sql`     | Inserção de dados nas tabelas          |
 
 ### Criar Nova Migration
 
