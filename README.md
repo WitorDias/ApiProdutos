@@ -1185,18 +1185,17 @@ O sistema possui auditoria completa de operações críticas.
   "dadosAntigos": "{\"nome\":\"Mouse Antigo\",\"preco\":150.00}",
   "dadosNovos": "{\"nome\":\"Mouse Gamer\",\"preco\":199.90}",
   "dataHora": "2025-11-22T14:30:00",
-  "ipOrigem": "192.168.1.10"
 }
 ```
 
 ### Consultar Logs de Auditoria
 
-#### GET `/api/auditoria/{entidade}/{entidadeId}`
+#### GET `/v1/auditoria/{entidade}/{entidadeId}`
 Buscar logs de uma entidade específica
 - **Auth**: ADMIN
 - **Exemplo**: `/api/auditoria/PRODUTO/10`
 
-#### GET `/api/auditoria/usuario/{usuarioId}`
+#### GET `/v1/auditoria/usuario/{usuarioId}`
 Buscar logs por usuário
 - **Auth**: ADMIN
 
@@ -1210,7 +1209,7 @@ Buscar logs por usuário
   "status": 400,
   "error": "Bad Request",
   "message": "Produto com este SKU já existe",
-  "path": "/api/produtos"
+  "path": "/v1/produtos"
 }
 ```
 
