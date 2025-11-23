@@ -247,12 +247,46 @@ O Swagger UI permite:
 
 ### Autenticação no Swagger
 
-1. Faça login em `/api/auth/login` para obter o token
+1. Faça login em `/auth/login` para obter o token
 2. Clique no botão **"Authorize"** (cadeado) no topo da página
 3. Insira o token no formato: `Bearer seu-token-jwt-aqui`
 4. Clique em **"Authorize"** e depois **"Close"**
 
 Agora você pode testar endpoints protegidos!
+
+### Resumo Rápido dos Endpoints
+
+| Recurso | Método | Endpoint | Auth | Descrição |
+|---------|--------|----------|------|-----------|
+| **Autenticação** | POST | `/auth/login` | Público | Login e geração de token JWT |
+| | POST | `/auth/refresh` | Público | Renovar token JWT |
+| | GET | `/auth/me` | Qualquer | Dados do usuário logado |
+| **Produtos** | GET | `/v1/produtos` | ADMIN, VENDEDOR, CLIENTE | Listar produtos ativos |
+| | GET | `/v1/produtos/{id}` | ADMIN, VENDEDOR, CLIENTE | Buscar produto por ID |
+| | POST | `/v1/produtos` | ADMIN, VENDEDOR | Criar produto com estoque inicial |
+| | PUT | `/v1/produtos/{id}` | ADMIN, VENDEDOR | Atualizar produto |
+| | DELETE | `/v1/produtos/{id}` | ADMIN | Deletar produto (soft delete) |
+| **Categorias** | GET | `/v1/categorias` | ADMIN, VENDEDOR, CLIENTE | Listar categorias |
+| | GET | `/v1/categorias/{id}` | ADMIN, VENDEDOR, CLIENTE | Buscar categoria por ID |
+| | POST | `/v1/categorias` | ADMIN | Criar categoria |
+| | PUT | `/v1/categorias/{id}` | ADMIN | Atualizar categoria |
+| | DELETE | `/v1/categorias/{id}` | ADMIN | Deletar categoria |
+| **Estoque** | GET | `/v1/estoque/{produtoId}` | Qualquer | Consultar estoque |
+| **Movimentos** | POST | `/v1/movimentos/entrada` | ADMIN, VENDEDOR | Registrar entrada |
+| | POST | `/v1/movimentos/saida` | ADMIN, VENDEDOR | Registrar saída |
+| | GET | `/v1/movimentos/{produtoId}` | ADMIN, VENDEDOR | Histórico de movimentações |
+| **Carrinho** | GET | `/v1/carrinhos?usuarioId=X` | CLIENTE | Ver carrinho ativo |
+| | POST | `/v1/carrinhos/produtos?usuarioId=X` | CLIENTE | Adicionar produto |
+| | PUT | `/v1/carrinhos/produtos/{produtoId}?usuarioId=X` | CLIENTE | Atualizar quantidade |
+| | DELETE | `/v1/carrinhos/produtos/{produtoId}?usuarioId=X` | CLIENTE | Remover produto |
+| | POST | `/v1/carrinhos/finalizar?usuarioId=X` | CLIENTE | Finalizar (criar pedido) |
+| | DELETE | `/v1/carrinhos/cancelar?usuarioId=X` | CLIENTE | Cancelar carrinho |
+| **Pedidos** | GET | `/v1/pedidos?usuarioId=X` | CLIENTE, ADMIN | Listar pedidos |
+| | GET | `/v1/pedidos/{id}` | CLIENTE, ADMIN | Buscar pedido por ID |
+| | POST | `/v1/pedidos` | CLIENTE | Criar pedido |
+| | PUT | `/v1/pedidos/{id}/status` | ADMIN | Atualizar status |
+| **Auditoria** | GET | `/auditoria` | ADMIN | Listar logs de auditoria |
+| | GET | `/auditoria?entidade=X` | ADMIN | Filtrar logs por entidade |
 
 ## 📁 Estrutura do Projeto
 
@@ -529,19 +563,13 @@ A aplicação implementa três níveis de acesso:
 ### Fluxo de Autenticação
 
 ```
-1. Registro
-   POST /api/auth/cadastrar
-   Body: { "nome", "email", "senha", "roles" }
-   ↓
-   Usuario criado com senha hash (BCrypt)
-
-2. Login
-   POST /api/auth/login
+1. Login
+   POST /auth/login
    Body: { "login": "email", "senha" }
    ↓
    Retorna JWT Token + dados do usuário
 
-3. Acesso a Recursos Protegidos
+2. Acesso a Recursos Protegidos
    Header: Authorization: Bearer {token}
    ↓
    Token validado e permissões verificadas
@@ -552,22 +580,12 @@ A aplicação implementa três níveis de acesso:
 ### Exemplo de Uso
 
 ```bash
-# 1. Registrar usuário
-curl -X POST http://localhost:8080/api/auth/cadastrar \
+# 1. Fazer login
+curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "nome": "João Silva",
-    "email": "joao@email.com",
-    "senha": "Senha@123",
-    "roles": ["CLIENTE"]
-  }'
-
-# 2. Fazer login
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "login": "joao@email.com",
-    "senha": "Senha@123"
+    "login": "admin@example.com",
+    "senha": "Admin@123"
   }'
 
 # Resposta:
@@ -575,13 +593,43 @@ curl -X POST http://localhost:8080/api/auth/login \
   "token": "eyJhbGciOiJIUzI1NiIs...",
   "tipo": "Bearer",
   "usuarioId": 1,
-  "nome": "João Silva",
-  "email": "joao@email.com",
-  "papeis": ["CLIENTE"]
+  "nome": "Admin",
+  "email": "admin@example.com",
+  "papeis": ["ADMIN"]
 }
 
-# 3. Usar token em requisições
-curl -X GET http://localhost:8080/api/produtos \
+# 2. Usar token em requisições protegidas
+curl -X GET http://localhost:8080/v1/produtos \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+
+# 3. Criar produto com estoque inicial (ADMIN ou VENDEDOR)
+curl -X POST http://localhost:8080/v1/produtos \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+  -d '{
+    "produto": {
+      "nome": "Mouse Gamer",
+      "sku": "MGM-001",
+      "descricao": "Mouse gamer RGB 16000 DPI",
+      "preco": 199.90,
+      "precoCusto": 120.00,
+      "categoriaId": 1,
+      "ativo": true
+    },
+    "quantidadeInicial": 100
+  }'
+
+# 4. Adicionar produto ao carrinho (CLIENTE)
+curl -X POST "http://localhost:8080/v1/carrinhos/produtos?usuarioId=1" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+  -d '{
+    "produtoId": 1,
+    "quantidade": 2
+  }'
+
+# 5. Finalizar carrinho (criar pedido)
+curl -X POST "http://localhost:8080/v1/carrinhos/finalizar?usuarioId=1" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
 ```
 
@@ -600,38 +648,14 @@ As senhas devem atender aos seguintes critérios:
 
 ### 🔐 Autenticação
 
-#### POST `/api/auth/cadastrar`
-Cadastrar novo usuário
+#### POST `/auth/login`
+Autenticar usuário e obter token JWT
 
 **Request:**
 ```json
 {
-  "nome": "João Silva",
-  "email": "joao@email.com",
-  "senha": "Senha@123",
-  "roles": ["CLIENTE"]
-}
-```
-
-**Response (201):**
-```json
-{
-  "id": 1,
-  "nome": "João Silva",
-  "email": "joao@email.com",
-  "roles": ["CLIENTE"],
-  "ativo": true
-}
-```
-
-#### POST `/api/auth/login`
-Autenticar usuário
-
-**Request:**
-```json
-{
-  "login": "joao@email.com",
-  "senha": "Senha@123"
+  "login": "admin@example.com",
+  "senha": "Admin@123"
 }
 ```
 
@@ -641,58 +665,123 @@ Autenticar usuário
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "tipo": "Bearer",
   "usuarioId": 1,
-  "nome": "João Silva",
-  "email": "joao@email.com",
-  "papeis": ["CLIENTE"]
+  "nome": "Admin",
+  "email": "admin@example.com",
+  "papeis": ["ADMIN"]
 }
 ```
+
+#### POST `/auth/refresh`
+Renovar token JWT
+
+**Request:**
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (200):**
+```json
+{
+  "token": "novo-token-jwt...",
+  "tipo": "Bearer",
+  "usuarioId": 1,
+  "nome": "Admin",
+  "email": "admin@example.com",
+  "papeis": ["ADMIN"]
+}
+```
+
+#### GET `/auth/me`
+Obter dados do usuário autenticado
+- **Auth**: Requerido (qualquer role)
+- **Response (200)**: Dados do usuário logado
 
 ### 📦 Produtos
 
-#### GET `/api/produtos`
-Listar todos os produtos
-- **Auth**: Pública
+#### GET `/v1/produtos`
+Listar todos os produtos ativos
+- **Auth**: ADMIN, VENDEDOR, CLIENTE
 - **Response (200)**: Array de produtos
 
-#### GET `/api/produtos/{id}`
+#### GET `/v1/produtos/{id}`
 Buscar produto por ID
-- **Auth**: Pública
+- **Auth**: ADMIN, VENDEDOR, CLIENTE
 - **Response (200)**: Dados do produto
 
-#### POST `/api/produtos`
-Criar novo produto
+#### POST `/v1/produtos`
+Criar novo produto com estoque inicial
 - **Auth**: ADMIN, VENDEDOR
-- **Request:**
+
+**Request:**
 ```json
 {
-  "nome": "Mouse Gamer",
-  "sku": "MGM-001",
-  "codigoBarras": "7891234567890",
-  "descricao": "Mouse gamer RGB 16000 DPI",
-  "preco": 199.90,
-  "precoCusto": 120.00,
-  "categoriaId": 5
+  "produto": {
+    "nome": "Mouse Gamer",
+    "sku": "MGM-001",
+    "descricao": "Mouse gamer RGB 16000 DPI",
+    "preco": 199.90,
+    "precoCusto": 120.00,
+    "categoriaId": 1,
+    "ativo": true
+  },
+  "quantidadeInicial": 100
 }
 ```
 
-#### PUT `/api/produtos/{id}`
-Atualizar produto
-- **Auth**: ADMIN, VENDEDOR (apenas seus produtos)
+**Response (201):**
+```json
+{
+  "id": 1,
+  "nome": "Mouse Gamer",
+  "sku": "MGM-001",
+  "descricao": "Mouse gamer RGB 16000 DPI",
+  "preco": 199.90,
+  "precoCusto": 120.00,
+  "categoriaId": 1,
+  "ativo": true
+}
+```
 
-#### DELETE `/api/produtos/{id}`
-Deletar produto
-- **Auth**: ADMIN
+#### PUT `/v1/produtos/{id}`
+Atualizar produto
+- **Auth**: ADMIN, VENDEDOR
+
+**Request:**
+```json
+{
+  "nome": "Mouse Gamer Pro",
+  "sku": "MGM-002",
+  "descricao": "Mouse gamer RGB 16000 DPI Pro",
+  "preco": 249.90,
+  "precoCusto": 150.00,
+  "categoriaId": 1
+}
+```
+
+#### DELETE `/v1/produtos/{id}`
+Deletar produto (soft delete - marca como inativo)
+- **Auth**: ADMIN apenas
+- **Response (204)**: Sem conteúdo
 
 ### 🏷️ Categorias
 
-#### GET `/api/categorias`
+#### GET `/v1/categorias`
 Listar todas as categorias
-- **Auth**: Pública
+- **Auth**: ADMIN, VENDEDOR, CLIENTE
+- **Response (200)**: Array de categorias
 
-#### POST `/api/categorias`
+#### GET `/v1/categorias/{id}`
+Buscar categoria por ID
+- **Auth**: ADMIN, VENDEDOR, CLIENTE
+- **Response (200)**: Dados da categoria
+
+#### POST `/v1/categorias`
 Criar categoria
-- **Auth**: ADMIN
-- **Request:**
+- **Auth**: ADMIN apenas
+
+**Request:**
 ```json
 {
   "nome": "Eletrônicos",
@@ -700,24 +789,58 @@ Criar categoria
 }
 ```
 
-#### PUT `/api/categorias/{id}`
-Atualizar categoria
-- **Auth**: ADMIN
+**Response (201):**
+```json
+{
+  "id": 1,
+  "nome": "Eletrônicos",
+  "parentId": null,
+  "criadoEm": "2025-11-22T14:30:00",
+  "atualizadoEm": "2025-11-22T14:30:00"
+}
+```
 
-#### DELETE `/api/categorias/{id}`
+#### PUT `/v1/categorias/{id}`
+Atualizar categoria
+- **Auth**: ADMIN apenas
+
+**Request:**
+```json
+{
+  "nome": "Eletrônicos e Informática",
+  "parentId": null
+}
+```
+
+#### DELETE `/v1/categorias/{id}`
 Deletar categoria
-- **Auth**: ADMIN
+- **Auth**: ADMIN apenas
+- **Response (204)**: Sem conteúdo
 
 ### 📊 Estoque
 
-#### GET `/api/estoques/{produtoId}`
+#### GET `/v1/estoque/{produtoId}`
 Consultar estoque de produto
-- **Auth**: Autenticado
+- **Auth**: Autenticado (qualquer role)
+
+**Response (200):**
+```json
+{
+  "id": 1,
+  "produtoId": 1,
+  "quantidade": 150,
+  "quantidadeReservada": 10,
+  "quantidadeDisponivel": 140
+}
+```
+
+### 📦 Movimentações de Estoque
 
 #### POST `/v1/movimentos/entrada`
 Registrar entrada de estoque
 - **Auth**: ADMIN, VENDEDOR
-- **Request:**
+
+**Request:**
 ```json
 {
   "produtoId": 1,
@@ -725,10 +848,22 @@ Registrar entrada de estoque
 }
 ```
 
+**Response (201):**
+```json
+{
+  "id": 1,
+  "estoqueId": 1,
+  "tipo": "ENTRADA",
+  "quantidade": 50,
+  "dataMovimento": "2025-11-22T14:30:00"
+}
+```
+
 #### POST `/v1/movimentos/saida`
 Registrar saída de estoque
 - **Auth**: ADMIN, VENDEDOR
-- **Request:**
+
+**Request:**
 ```json
 {
   "produtoId": 1,
@@ -736,20 +871,53 @@ Registrar saída de estoque
 }
 ```
 
+**Response (201):**
+```json
+{
+  "id": 2,
+  "estoqueId": 1,
+  "tipo": "SAIDA",
+  "quantidade": 10,
+  "dataMovimento": "2025-11-22T14:35:00"
+}
+```
+
 #### GET `/v1/movimentos/{produtoId}`
-Histórico de movimentações
+Histórico de movimentações do produto
 - **Auth**: ADMIN, VENDEDOR
+- **Response (200)**: Array de movimentações ordenadas por data
 
 ### 🛒 Carrinho
 
-#### GET `/api/carrinho`
-Ver carrinho atual
-- **Auth**: CLIENTE, VENDEDOR, ADMIN
+#### GET `/v1/carrinhos?usuarioId={usuarioId}`
+Ver carrinho ativo do usuário
+- **Auth**: CLIENTE apenas
 
-#### POST `/api/carrinho/produtos`
+**Response (200):**
+```json
+{
+  "id": 1,
+  "usuarioId": 1,
+  "status": "ABERTO",
+  "itens": [
+    {
+      "itemId": 1,
+      "produtoId": 1,
+      "nomeProduto": "Mouse Gamer",
+      "quantidade": 2,
+      "priceSnapshot": 199.90,
+      "subtotal": 399.80
+    }
+  ],
+  "total": 399.80
+}
+```
+
+#### POST `/v1/carrinhos/produtos?usuarioId={usuarioId}`
 Adicionar produto ao carrinho
-- **Auth**: CLIENTE, VENDEDOR, ADMIN
-- **Request:**
+- **Auth**: CLIENTE apenas
+
+**Request:**
 ```json
 {
   "produtoId": 1,
@@ -757,47 +925,134 @@ Adicionar produto ao carrinho
 }
 ```
 
-#### PUT `/api/carrinho/produtos/{produtoId}`
+**Response (201):**
+```json
+{
+  "id": 1,
+  "usuarioId": 1,
+  "status": "ABERTO",
+  "itens": [
+    {
+      "itemId": 1,
+      "produtoId": 1,
+      "nomeProduto": "Mouse Gamer",
+      "quantidade": 2,
+      "priceSnapshot": 199.90,
+      "subtotal": 399.80
+    }
+  ],
+  "total": 399.80
+}
+```
+
+#### PUT `/v1/carrinhos/produtos/{produtoId}?usuarioId={usuarioId}`
 Atualizar quantidade de produto
-- **Auth**: CLIENTE, VENDEDOR, ADMIN
-- **Request:**
+- **Auth**: CLIENTE apenas
+
+**Request:**
 ```json
 {
   "quantidade": 5
 }
 ```
 
-#### DELETE `/api/carrinho/produtos/{produtoId}`
+#### DELETE `/v1/carrinhos/produtos/{produtoId}?usuarioId={usuarioId}`
 Remover produto do carrinho
-- **Auth**: CLIENTE, VENDEDOR, ADMIN
+- **Auth**: CLIENTE apenas
+- **Response (200)**: Carrinho atualizado
 
-#### POST `/api/carrinho/finalizar`
+#### POST `/v1/carrinhos/finalizar?usuarioId={usuarioId}`
 Finalizar carrinho (criar pedido)
-- **Auth**: CLIENTE, VENDEDOR, ADMIN
+- **Auth**: CLIENTE apenas
 
-#### DELETE `/api/carrinho/cancelar`
-Cancelar carrinho
-- **Auth**: CLIENTE, VENDEDOR, ADMIN
+**Response (200):**
+```json
+{
+  "pedidoId": 1,
+  "message": "Carrinho finalizado e pedido criado com sucesso",
+  "total": 399.80
+}
+```
+
+#### DELETE `/v1/carrinhos/cancelar?usuarioId={usuarioId}`
+Cancelar carrinho (devolver itens ao estoque)
+- **Auth**: CLIENTE apenas
+- **Response (200)**: Mensagem de confirmação
 
 ### 📝 Pedidos
 
-#### GET `/api/pedidos`
+#### GET `/v1/pedidos?usuarioId={usuarioId}`
 Listar pedidos do usuário logado
-- **Auth**: CLIENTE, VENDEDOR, ADMIN
+- **Auth**: CLIENTE (próprios pedidos), ADMIN (todos)
+- **Response (200)**: Array de pedidos
 
-#### GET `/api/pedidos/{id}`
+#### GET `/v1/pedidos/{id}`
 Buscar pedido por ID
 - **Auth**: CLIENTE (apenas próprios), ADMIN (todos)
 
-#### PUT `/api/pedidos/{id}/status`
+**Response (200):**
+```json
+{
+  "id": 1,
+  "usuarioId": 1,
+  "status": "PENDENTE",
+  "total": 399.80,
+  "criadoEm": "2025-11-22T14:30:00",
+  "itens": [
+    {
+      "id": 1,
+      "produtoId": 1,
+      "nomeProduto": "Mouse Gamer",
+      "quantidade": 2,
+      "precoUnitario": 199.90,
+      "subtotal": 399.80
+    }
+  ]
+}
+```
+
+#### POST `/v1/pedidos`
+Criar novo pedido
+- **Auth**: CLIENTE apenas
+
+**Request:**
+```json
+{
+  "usuarioId": 1,
+  "itens": [
+    {
+      "produtoId": 1,
+      "quantidade": 2
+    }
+  ]
+}
+```
+
+#### PUT `/v1/pedidos/{id}/status`
 Atualizar status do pedido
-- **Auth**: ADMIN
-- **Request:**
+- **Auth**: ADMIN apenas
+
+**Request:**
 ```json
 {
   "status": "CONFIRMADO"
 }
 ```
+
+**Status disponíveis**: `PENDENTE`, `CONFIRMADO`, `ENVIADO`, `ENTREGUE`, `CANCELADO`
+
+### 📋 Auditoria
+
+#### GET `/auditoria`
+Buscar todos os logs de auditoria
+- **Auth**: ADMIN
+- **Response (200)**: Array completo de logs
+
+#### GET `/auditoria?entidade={entidade}`
+Buscar logs de uma entidade específica
+- **Auth**: ADMIN
+- **Exemplo**: `/auditoria?entidade=PRODUTO`
+- **Response (200)**: Array de logs filtrados
 
 ## 🧪 Testes
 
@@ -930,18 +1185,17 @@ O sistema possui auditoria completa de operações críticas.
   "dadosAntigos": "{\"nome\":\"Mouse Antigo\",\"preco\":150.00}",
   "dadosNovos": "{\"nome\":\"Mouse Gamer\",\"preco\":199.90}",
   "dataHora": "2025-11-22T14:30:00",
-  "ipOrigem": "192.168.1.10"
 }
 ```
 
 ### Consultar Logs de Auditoria
 
-#### GET `/api/auditoria/{entidade}/{entidadeId}`
+#### GET `/v1/auditoria/{entidade}/{entidadeId}`
 Buscar logs de uma entidade específica
 - **Auth**: ADMIN
 - **Exemplo**: `/api/auditoria/PRODUTO/10`
 
-#### GET `/api/auditoria/usuario/{usuarioId}`
+#### GET `/v1/auditoria/usuario/{usuarioId}`
 Buscar logs por usuário
 - **Auth**: ADMIN
 
@@ -955,7 +1209,7 @@ Buscar logs por usuário
   "status": 400,
   "error": "Bad Request",
   "message": "Produto com este SKU já existe",
-  "path": "/api/produtos"
+  "path": "/v1/produtos"
 }
 ```
 
