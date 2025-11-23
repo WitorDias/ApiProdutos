@@ -488,10 +488,8 @@ ApiProdutos/
   "id": Long,
   "nome": String,
   "sku": String (unique),
-  "codigoBarras": String (unique),
   "descricao": String,
   "preco": BigDecimal,
-  "precoCusto": BigDecimal,
   "categoriaId": Long,
   "ativo": Boolean
 }
