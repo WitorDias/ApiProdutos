@@ -51,7 +51,6 @@ class ProdutoServiceTest {
     @Test
     @DisplayName("Deve buscar lista de produtos ativos")
     void deveBuscarListaDeProdutos() {
-
         Categoria categoria = Categoria.builder()
                 .id(1L)
                 .nome("Roupas")
@@ -128,7 +127,7 @@ class ProdutoServiceTest {
 
     @Test
     @DisplayName("Deve lançar erro quando quantidade inicial é inválida")
-    void deveLancarValidacaoProdutoException() {
+    void deveLancarValidacaoQuantidade() {
 
         ProdutoRequest req = new ProdutoRequest("A", "B", BigDecimal.TEN, "SKU", 1L, true);
 
@@ -221,7 +220,7 @@ class ProdutoServiceTest {
 
     @Test
     @DisplayName("Deve lançar erro ao atualizar produto com preço inválido")
-    void deveLancarValidacaoProdutoExceptionQuandoAtualizarComPrecoInvalido() {
+    void deveLancarValidacaoProdutoExceptionAtualizarComPrecoInvalido() {
 
         ProdutoRequest request = new ProdutoRequest(
                 "X", "Y", BigDecimal.valueOf(-1), "SKU", 1L, true
@@ -336,5 +335,59 @@ class ProdutoServiceTest {
         verify(produtoRepository).findByCategoriaNomeIgnoreCaseAndAtivoTrue("eletrônicos");
     }
 
+    @Test
+    @DisplayName("Deve lançar erro quando nome é inválido no ProdutoRequest")
+    void deveLancarValidacaoProdutoExceptionNomeInvalido() {
 
+        ProdutoRequest req = new ProdutoRequest(
+                " ", "desc", BigDecimal.TEN, "SKU", 1L, true
+        );
+
+        CriarProdutoRequest criar = new CriarProdutoRequest(req, 1);
+
+        assertThrows(ValidacaoProdutoException.class,
+                () -> produtoService.salvarProduto(criar));
+    }
+
+    @Test
+    @DisplayName("Deve lançar erro quando SKU é vazio")
+    void deveLancarValidacaoProdutoExceptionSkuVazio() {
+
+        ProdutoRequest req = new ProdutoRequest(
+                "Prod", "desc", BigDecimal.TEN, " ", 1L, true
+        );
+
+        CriarProdutoRequest criar = new CriarProdutoRequest(req, 1);
+
+        assertThrows(ValidacaoProdutoException.class,
+                () -> produtoService.salvarProduto(criar));
+    }
+
+    @Test
+    @DisplayName("Deve lançar erro quando categoriaId é nulo")
+    void deveLancarValidacaoProdutoExceptionCategoriaIdNulo() {
+
+        ProdutoRequest req = new ProdutoRequest(
+                "Prod", "desc", BigDecimal.TEN, "ABC", null, true
+        );
+
+        CriarProdutoRequest criar = new CriarProdutoRequest(req, 2);
+
+        assertThrows(ValidacaoProdutoException.class,
+                () -> produtoService.salvarProduto(criar));
+    }
+
+    @Test
+    @DisplayName("Deve lançar erro quando preço é menor ou igual a zero")
+    void deveLancarValidacaoProdutoExceptionPrecoMenorOuIgualZero() {
+
+        ProdutoRequest req = new ProdutoRequest(
+                "Prod", "desc", BigDecimal.ZERO, "ABC", 1L, true
+        );
+
+        CriarProdutoRequest criar = new CriarProdutoRequest(req, 2);
+
+        assertThrows(ValidacaoProdutoException.class,
+                () -> produtoService.salvarProduto(criar));
+    }
 }

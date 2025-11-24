@@ -46,6 +46,8 @@ public class ProdutoService {
         ProdutoRequest produtoRequest = request.produto();
         validarProdutoRequest(produtoRequest);
         validarQuantidade(request.quantidade());
+        validarCategoriaId(request.produto().categoriaId());
+        validarPreco(request.produto().preco());
 
         produtoRepository.findBySku(produtoRequest.sku())
                 .ifPresent(skuJaExiste -> {
@@ -85,12 +87,8 @@ public class ProdutoService {
     @Transactional
     public ProdutoResponse atualizarProduto(Long id, ProdutoRequest request){
 
-        if (request.preco() == null || request.preco().compareTo(BigDecimal.ZERO) < 0) {
-            throw new ValidacaoProdutoException("Preço não pode ser nulo ou negativo");
-        }
-        if (request.categoriaId() == null) {
-            throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
-        }
+        validarPreco(request.preco());
+        validarCategoriaId(request.categoriaId());
 
         var produtoParaAtualizar = buscarProdutoPorEntidade(id);
 
@@ -157,11 +155,22 @@ public class ProdutoService {
     }
 
     private void validarQuantidade(Integer quantidade){
-
         if(quantidade == null || quantidade <= 0){
             throw new ValidacaoProdutoException("A quantidade não pode ser nula ou menor que 1.");
         }
-
     }
+
+    private void validarPreco(BigDecimal preco) {
+        if (preco == null || preco.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidacaoProdutoException("Preço não pode ser nulo e deve ser maior que 0");
+        }
+    }
+
+    private void validarCategoriaId(Long categoriaId) {
+        if (categoriaId == null) {
+            throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
+        }
+    }
+
 
 }
