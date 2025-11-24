@@ -127,6 +127,20 @@ public class ProdutoService {
         auditService.registrar("Produto", id, TipoOperacao.DELETE, estadoAnterior, null);
     }
 
+    public List<ProdutoResponse> buscarPorNome(String nome) {
+        var produtos = produtoRepository.findByNomeContainingIgnoreCaseAndAtivoTrue(nome);
+        return produtos.stream()
+                .map(ProdutoMapper::toResponse)
+                .toList();
+    }
+
+    public List<ProdutoResponse> buscarPorNomeCategoria(String nomeCategoria) {
+        var produtos = produtoRepository.findByCategoriaNomeIgnoreCaseAndAtivoTrue(nomeCategoria);
+        return produtos.stream()
+                .map(ProdutoMapper::toResponse)
+                .toList();
+    }
+
     private void validarProdutoRequest(ProdutoRequest produtoRequest){
         if (produtoRequest.nome() == null || produtoRequest.nome().trim().isEmpty()) {
             throw new ValidacaoProdutoException("Nome do produto não pode ser vazio");

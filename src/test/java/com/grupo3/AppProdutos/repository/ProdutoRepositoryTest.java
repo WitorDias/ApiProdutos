@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 public class ProdutoRepositoryTest {
 
     @Autowired
@@ -30,6 +32,7 @@ public class ProdutoRepositoryTest {
     private Produto produtoAtivo;
     private Produto produtoInativo;
     private Produto produtoAtivo2;
+
 
     @BeforeEach
     public void configuracao() {
@@ -112,10 +115,20 @@ public class ProdutoRepositoryTest {
     void deveRetornarApenasProdutosAtivos() {
         List<Produto> produtosAtivos = produtoRepository.findAllByAtivoTrue();
 
-        assertThat(produtosAtivos).hasSize(2);
-        assertThat(produtosAtivos).extracting(Produto::getAtivo).containsOnly(true);
-        assertThat(produtosAtivos).extracting(Produto::getNome).containsExactlyInAnyOrder("Smartphone X", "Mousepad Pro");
+        assertThat(produtosAtivos)
+                .extracting(Produto::getNome)
+                .contains(
+                        "Smartphone X",
+                        "Mousepad Pro",
+                        "Processador Ryzen 5 5600G"
+                );
+
+        assertThat(produtosAtivos)
+                .extracting(Produto::getAtivo)
+                .containsOnly(true);
     }
+
+
 
 
     @Test
@@ -134,4 +147,33 @@ public class ProdutoRepositoryTest {
 
         assertThat(encontrado).isNotPresent();
     }
+
+    @Test
+    @DisplayName("Deve retornar produtos ativos ao buscar por parte do nome (contains, ignore case)")
+    void deveRetornarProdutosAtivosAoBuscarPorNome() {
+        List<Produto> encontrados = produtoRepository.findByNomeContainingIgnoreCaseAndAtivoTrue("pro");
+
+        assertThat(encontrados).hasSize(2);
+        assertThat(encontrados)
+                .extracting(Produto::getNome)
+                .containsExactlyInAnyOrder("Mousepad Pro", "Processador Ryzen 5 5600G");
+    }
+
+
+    @Test
+    @DisplayName("Deve retornar lista vazia quando nenhum produto corresponder ao nome informado")
+    void deveRetornarListaVaziaQuandoNenhumProdutoCorresponderAoNomeInformado() {
+        List<Produto> encontrados = produtoRepository.findByNomeContainingIgnoreCaseAndAtivoTrue("inexistente");
+
+        assertThat(encontrados).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Deve retornar lista vazia ao buscar categoria inexistente")
+    void deveRetornarListaVaziaAoBuscarCategoriaInexistente() {
+        List<Produto> encontrados = produtoRepository.findByCategoriaNomeIgnoreCaseAndAtivoTrue("Categoria Inexistente");
+
+        assertThat(encontrados).isEmpty();
+    }
+
 }

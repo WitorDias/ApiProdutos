@@ -109,4 +109,35 @@ public class ProdutoController {
         produtoService.deletarProduto(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @Operation(summary = "Buscar produtos por nome", description = "Retorna uma lista de produtos ativos cujo nome corresponde (parcial ou totalmente) ao informado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de produtos encontrada com sucesso",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ProdutoResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Não autorizado", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Acesso negado", content = @Content)
+    })
+    @GetMapping("/nome")
+    public ResponseEntity<List<ProdutoResponse>> buscarProdutoPorNome(@RequestParam String nome) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(produtoService.buscarPorNome(nome));
+    }
+
+    @Operation(summary = "Buscar produtos por nome da categoria", description = "Retorna todos os produtos ativos associados a uma categoria cujo nome corresponde ao informado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de produtos encontrada com sucesso",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ProdutoResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Não autorizado", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Acesso negado", content = @Content)
+    })
+    @GetMapping("/categoria")
+    public ResponseEntity<List<ProdutoResponse>> buscarProdutoPorNomeCategoria(@RequestParam String categoria) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(produtoService.buscarPorNomeCategoria(categoria));
+    }
+
 }
