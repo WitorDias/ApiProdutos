@@ -20,3 +20,27 @@ spring:
 
   flyway:
     enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+  show-actuator: false
+
+logging:
+  level:
+    org:
+      springdoc: DEBUG
+      springframework:
+        security: DEBUG
+
+api:
+  security:
+    token:
+      secret: ${JWT_SECRET:minha-chave-secreta-super-segura-para-desenvolvimento-2025}
+      expiration: 7200000

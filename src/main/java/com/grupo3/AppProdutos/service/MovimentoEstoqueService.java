@@ -1,9 +1,14 @@
 package com.grupo3.AppProdutos.service;
 
+import com.grupo3.AppProdutos.auditoria.AuditService;
+import com.grupo3.AppProdutos.auditoria.TipoOperacao;
+import com.grupo3.AppProdutos.dto.auditoriaDTO.MovimentoEstoqueAuditDTO;
+import com.grupo3.AppProdutos.exception.EstoqueInsuficienteException;
+import com.grupo3.AppProdutos.exception.QuantidadeInvalidaException;
 import com.grupo3.AppProdutos.model.Estoque;
 import com.grupo3.AppProdutos.model.MovimentoEstoque;
 import com.grupo3.AppProdutos.model.Produto;
-import com.grupo3.AppProdutos.model.TipoMovimento;
+import com.grupo3.AppProdutos.model.enums.TipoMovimento;
 import com.grupo3.AppProdutos.repository.EstoqueMovimentoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +22,13 @@ public class MovimentoEstoqueService {
     private final EstoqueMovimentoRepository estoqueMovimentoRepository;
     private final EstoqueService estoqueService;
     private final ProdutoConsultaService produtoConsultaService;
+    private final AuditService auditService;
 
-    public MovimentoEstoqueService(EstoqueMovimentoRepository estoqueMovimentoRepository, EstoqueService estoqueService, ProdutoConsultaService produtoConsultaService) {
+    public MovimentoEstoqueService(EstoqueMovimentoRepository estoqueMovimentoRepository, EstoqueService estoqueService, ProdutoConsultaService produtoConsultaService, AuditService auditService) {
         this.estoqueMovimentoRepository = estoqueMovimentoRepository;
         this.estoqueService = estoqueService;
         this.produtoConsultaService = produtoConsultaService;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -36,16 +43,19 @@ public class MovimentoEstoqueService {
                 .tipoMovimento(TipoMovimento.ENTRADA)
                 .criadoEm(LocalDateTime.now())
                 .build();
-        return estoqueMovimentoRepository.save(movimento);
+
+        MovimentoEstoque salvo = estoqueMovimentoRepository.save(movimento);
+        auditService.registrar("MovimentoEstoque", salvo.getId(), TipoOperacao.CREATE, null, toMovimentoAuditDTO(salvo));
+        return salvo;
 
     }
-
+    @Transactional
     public MovimentoEstoque registrarSaida(Long produtoId, Integer quantidade){
         validarQuantidade(quantidade);
         Produto produto = produtoConsultaService.buscarProdutoPorId(produtoId);
         Estoque estoque = estoqueService.buscarEstoquePorProdutoId(produtoId);
         if(estoque.getQuantidade() < quantidade){
-            throw new IllegalArgumentException("Estoque insuficiente para o produto: " + produto.getId() + " " + produto.getNome());
+            throw new EstoqueInsuficienteException(estoque.getQuantidade(), quantidade);
         }
         estoqueService.atualizarQuantidadeEstoque(produtoId, estoque.getQuantidade() - quantidade);
         MovimentoEstoque movimento = MovimentoEstoque.builder()
@@ -54,7 +64,10 @@ public class MovimentoEstoqueService {
                 .tipoMovimento(TipoMovimento.SAIDA)
                 .criadoEm(LocalDateTime.now())
                 .build();
-        return estoqueMovimentoRepository.save(movimento);
+
+        MovimentoEstoque salvo = estoqueMovimentoRepository.save(movimento);
+        auditService.registrar("MovimentoEstoque", salvo.getId(), TipoOperacao.CREATE, null, toMovimentoAuditDTO(salvo));
+        return salvo;
     }
 
     public List<MovimentoEstoque> listarMovimentosPorProdutoId(Long produtoId){
@@ -62,17 +75,22 @@ public class MovimentoEstoqueService {
         return estoqueMovimentoRepository.findByProduto_Id(produto.getId());
     }
 
-
-    public void deletarMovimentoEstoquePorProdutoId(Long id){
-        var produto = produtoConsultaService.buscarProdutoPorId(id);
-        estoqueMovimentoRepository.deleteByProduto(produto);
-    }
-
     private void validarQuantidade(Integer quantidade){
 
-        if(quantidade == null || quantidade < 0){
-            throw new IllegalArgumentException("A quantidade não pode ser nula ou menor que 0.");
+        if(quantidade == null || quantidade <= 0){
+            throw new QuantidadeInvalidaException("A quantidade deve ser maior que 0.");
         }
 
+    }
+
+    private MovimentoEstoqueAuditDTO toMovimentoAuditDTO(MovimentoEstoque movimento) {
+        return new MovimentoEstoqueAuditDTO(
+                movimento.getId(),
+                movimento.getProduto().getId(),
+                movimento.getProduto().getNome(),
+                movimento.getQuantidade(),
+                movimento.getTipoMovimento(),
+                movimento.getCriadoEm()
+        );
     }
 }

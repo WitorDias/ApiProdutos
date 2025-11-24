@@ -1,5 +1,6 @@
 package com.grupo3.AppProdutos.model;
 
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Entity
+@Table(name = "tb_produto")
 public class Produto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,6 +24,11 @@ public class Produto {
     private String descricao;
     private BigDecimal preco;
     private String sku;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id", nullable = false)
+    @JsonIdentityReference(alwaysAsId = true)
+    private Categoria categoria;
 
     @Column(name = "criado_em",updatable = false)
     private LocalDateTime criadoEm;

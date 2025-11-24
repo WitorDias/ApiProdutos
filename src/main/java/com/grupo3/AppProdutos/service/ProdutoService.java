@@ -1,6 +1,13 @@
 package com.grupo3.AppProdutos.service;
 
-import com.grupo3.AppProdutos.dto.CriarProdutoRequest;
+import com.grupo3.AppProdutos.auditoria.AuditService;
+import com.grupo3.AppProdutos.auditoria.TipoOperacao;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.CriarProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoRequest;
+import com.grupo3.AppProdutos.dto.ProdutoDTO.ProdutoResponse;
+import com.grupo3.AppProdutos.exception.SkuJaExisteException;
+import com.grupo3.AppProdutos.exception.ValidacaoProdutoException;
+import com.grupo3.AppProdutos.mapper.ProdutoMapper;
 import com.grupo3.AppProdutos.model.Produto;
 import com.grupo3.AppProdutos.repository.ProdutoRepository;
 
@@ -17,93 +24,153 @@ public class ProdutoService {
 
     private final ProdutoRepository produtoRepository;
     private final EstoqueService estoqueService;
-    private final MovimentoEstoqueService movimentoEstoqueService;
     private final ProdutoConsultaService produtoConsultaService;
+    private final CategoriaService categoriaService;
+    private final AuditService auditService;
 
-    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, MovimentoEstoqueService movimentoEstoqueService, ProdutoConsultaService produtoConsultaService) {
+    public ProdutoService(ProdutoRepository produtoRepository, EstoqueService estoqueService, ProdutoConsultaService produtoConsultaService, CategoriaService categoriaService, AuditService auditService) {
         this.produtoRepository = produtoRepository;
         this.estoqueService = estoqueService;
-        this.movimentoEstoqueService = movimentoEstoqueService;
         this.produtoConsultaService = produtoConsultaService;
+        this.categoriaService = categoriaService;
+        this.auditService = auditService;
     }
 
-    public List<Produto> buscarListaDeProdutos(){
-        return produtoRepository.findAll();
+    public List<ProdutoResponse> buscarListaDeProdutos(){
+        return ProdutoMapper.toResponseList(produtoRepository.findAllByAtivoTrue());
     }
+
 
     @Transactional
-    public Produto salvarProduto(CriarProdutoRequest request){
-        Produto produto = request.produto();
-        validarProduto(request.produto());
+    public ProdutoResponse salvarProduto(CriarProdutoRequest request){
+        ProdutoRequest produtoRequest = request.produto();
+        validarProdutoRequest(produtoRequest);
         validarQuantidade(request.quantidade());
+        validarCategoriaId(request.produto().categoriaId());
+        validarPreco(request.produto().preco());
 
-        if(produto.getAtivo() == null){
-            produto.setAtivo(true);
-        }
-
-        produtoRepository.findBySku(produto.getSku())
+        produtoRepository.findBySku(produtoRequest.sku())
                 .ifPresent(skuJaExiste -> {
-                    throw new IllegalArgumentException("SKU já está em uso");
+                    throw new SkuJaExisteException();
                 });
 
-        produto.setCriadoEm(LocalDateTime.now());
-        produto.setAtualizadoEm(LocalDateTime.now());
+        var categoria = categoriaService.buscarCategoriaPorId(produtoRequest.categoriaId());
+
+        Produto produto = Produto.builder()
+                .nome(produtoRequest.nome())
+                .descricao(produtoRequest.descricao())
+                .preco(produtoRequest.preco())
+                .sku(produtoRequest.sku())
+                .categoria(categoria)
+                .ativo(produtoRequest.ativo() != null ? produtoRequest.ativo() : true)
+                .criadoEm(LocalDateTime.now())
+                .atualizadoEm(LocalDateTime.now())
+                .build();
 
         Produto produtoSalvo = produtoRepository.save(produto);
         estoqueService.criarEstoqueParaProduto(produtoSalvo, request.quantidade());
 
-        return produtoSalvo;
+        auditService.registrar("Produto", produtoSalvo.getId(), TipoOperacao.CREATE, null, ProdutoMapper.toResponse(produtoSalvo));
+
+        return ProdutoMapper.toResponse(produtoSalvo);
 
     }
 
-    public Produto buscarProdutoPorId(Long id){
+    public ProdutoResponse buscarProdutoPorId(Long id){
+        return ProdutoMapper.toResponse(produtoConsultaService.buscarProdutoPorId(id));
+    }
+
+    private Produto buscarProdutoPorEntidade(Long id){
         return produtoConsultaService.buscarProdutoPorId(id);
     }
 
     @Transactional
-    public Produto atualizarProduto(Produto produto){
+    public ProdutoResponse atualizarProduto(Long id, ProdutoRequest request){
 
-        validarProduto(produto);
+        validarPreco(request.preco());
+        validarCategoriaId(request.categoriaId());
 
-        var produtoParaAtualizar = buscarProdutoPorId(produto.getId());
-        produtoParaAtualizar.setNome(produto.getNome());
-        produtoParaAtualizar.setDescricao(produto.getDescricao());
-        produtoParaAtualizar.setPreco(produto.getPreco());
+        var produtoParaAtualizar = buscarProdutoPorEntidade(id);
+
+        // Captura estado anterior ANTES das alterações
+        ProdutoResponse estadoAnterior = ProdutoMapper.toResponse(produtoParaAtualizar);
+
+        var categoria = categoriaService.buscarCategoriaPorId(request.categoriaId());
+
+        produtoParaAtualizar.setNome(request.nome());
+        produtoParaAtualizar.setDescricao(request.descricao());
+        produtoParaAtualizar.setPreco(request.preco());
+        produtoParaAtualizar.setSku(request.sku());
+        produtoParaAtualizar.setCategoria(categoria);
+        produtoParaAtualizar.setAtivo(request.ativo() != null ? request.ativo() : produtoParaAtualizar.getAtivo());
         produtoParaAtualizar.setAtualizadoEm(LocalDateTime.now());
-        produtoParaAtualizar.setSku(produto.getSku());
-        produtoParaAtualizar.setAtivo(produto.getAtivo());
 
-        return produtoRepository.save(produtoParaAtualizar);
+        Produto produtoAtualizado = produtoRepository.save(produtoParaAtualizar);
+        auditService.registrar("Produto", produtoAtualizado.getId(), TipoOperacao.UPDATE, estadoAnterior, ProdutoMapper.toResponse(produtoAtualizado));
 
+        return ProdutoMapper.toResponse(produtoAtualizado);
     }
 
     @Transactional
     public void deletarProduto(Long id){
-        var produto = buscarProdutoPorId(id);
-        movimentoEstoqueService.deletarMovimentoEstoquePorProdutoId(id);
-        estoqueService.deletarEstoquePorProdutoId(id);
-        produtoRepository.delete(produto);
+        var produto = buscarProdutoPorEntidade(id);
+
+        // Captura estado anterior ANTES da desativação
+        ProdutoResponse estadoAnterior = ProdutoMapper.toResponse(produto);
+
+        produto.setAtivo(false);
+        produto.setAtualizadoEm(LocalDateTime.now());
+        produtoRepository.save(produto);
+
+        auditService.registrar("Produto", id, TipoOperacao.DELETE, estadoAnterior, null);
     }
 
-    public void validarProduto(Produto produto){
-        if (produto.getNome() == null || produto.getNome().trim().isEmpty()) {
-            throw new IllegalArgumentException("Nome do produto não pode ser vazio");
-        }
-        if (produto.getPreco() == null || produto.getPreco().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Preço não pode ser nulo ou negativo");
-        }
-        if (produto.getSku() == null || produto.getSku().trim().isEmpty()) {
-            throw new IllegalArgumentException("SKU não pode ser vazio");
-        }
+    public List<ProdutoResponse> buscarPorNome(String nome) {
+        var produtos = produtoRepository.findByNomeContainingIgnoreCaseAndAtivoTrue(nome);
+        return produtos.stream()
+                .map(ProdutoMapper::toResponse)
+                .toList();
+    }
 
+    public List<ProdutoResponse> buscarPorNomeCategoria(String nomeCategoria) {
+        var produtos = produtoRepository.findByCategoriaNomeIgnoreCaseAndAtivoTrue(nomeCategoria);
+        return produtos.stream()
+                .map(ProdutoMapper::toResponse)
+                .toList();
+    }
+
+    private void validarProdutoRequest(ProdutoRequest produtoRequest){
+        if (produtoRequest.nome() == null || produtoRequest.nome().trim().isEmpty()) {
+            throw new ValidacaoProdutoException("Nome do produto não pode ser vazio");
+        }
+        if (produtoRequest.preco() == null || produtoRequest.preco().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidacaoProdutoException("Preço não pode ser nulo ou negativo");
+        }
+        if (produtoRequest.sku() == null || produtoRequest.sku().trim().isEmpty()) {
+            throw new ValidacaoProdutoException("SKU não pode ser vazio");
+        }
+        if (produtoRequest.categoriaId() == null) {
+            throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
+        }
     }
 
     private void validarQuantidade(Integer quantidade){
-
-        if(quantidade == null || quantidade < 0){
-            throw new IllegalArgumentException("A quantidade não pode ser nula ou menor que 0.");
+        if(quantidade == null || quantidade <= 0){
+            throw new ValidacaoProdutoException("A quantidade não pode ser nula ou menor que 1.");
         }
-
     }
+
+    private void validarPreco(BigDecimal preco) {
+        if (preco == null || preco.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidacaoProdutoException("Preço não pode ser nulo e deve ser maior que 0");
+        }
+    }
+
+    private void validarCategoriaId(Long categoriaId) {
+        if (categoriaId == null) {
+            throw new ValidacaoProdutoException("Produto deve pertencer a uma categoria");
+        }
+    }
+
 
 }
