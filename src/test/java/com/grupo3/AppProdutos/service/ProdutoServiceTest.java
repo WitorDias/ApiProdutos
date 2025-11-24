@@ -254,4 +254,87 @@ class ProdutoServiceTest {
                 eq(TipoOperacao.DELETE), any(), isNull());
     }
 
+    @Test
+    @DisplayName("Deve buscar produtos ativos por parte do nome")
+    void deveBuscarProdutosPorNome() {
+
+        Categoria categoria = Categoria.builder()
+                .id(1L)
+                .nome("Acessórios")
+                .build();
+
+        Produto p1 = Produto.builder()
+                .id(1L)
+                .nome("Mouse Gamer")
+                .preco(BigDecimal.TEN)
+                .sku("MOUSE01")
+                .ativo(true)
+                .categoria(categoria)
+                .criadoEm(LocalDateTime.now())
+                .build();
+
+        Produto p2 = Produto.builder()
+                .id(2L)
+                .nome("Mousepad Extra")
+                .preco(BigDecimal.ONE)
+                .sku("MP001")
+                .ativo(true)
+                .categoria(categoria)
+                .criadoEm(LocalDateTime.now())
+                .build();
+
+        when(produtoRepository.findByNomeContainingIgnoreCaseAndAtivoTrue("mouse"))
+                .thenReturn(List.of(p1, p2));
+
+        List<ProdutoResponse> respostas = produtoService.buscarPorNome("mouse");
+
+        assertEquals(2, respostas.size());
+        assertTrue(respostas.stream().anyMatch(r -> r.nome().equals("Mouse Gamer")));
+        assertTrue(respostas.stream().anyMatch(r -> r.nome().equals("Mousepad Extra")));
+
+        verify(produtoRepository).findByNomeContainingIgnoreCaseAndAtivoTrue("mouse");
+    }
+
+    @Test
+    @DisplayName("Deve buscar produtos ativos por nome da categoria")
+    void deveBuscarProdutosPorNomeCategoria() {
+
+        Categoria categoria = Categoria.builder()
+                .id(10L)
+                .nome("Eletrônicos")
+                .build();
+
+        Produto p1 = Produto.builder()
+                .id(3L)
+                .nome("Smartphone X")
+                .preco(BigDecimal.ONE)
+                .sku("SPX01")
+                .ativo(true)
+                .categoria(categoria)
+                .criadoEm(LocalDateTime.now())
+                .build();
+
+        Produto p2 = Produto.builder()
+                .id(4L)
+                .nome("Fone Bluetooth")
+                .preco(BigDecimal.TEN)
+                .sku("FBT01")
+                .ativo(true)
+                .categoria(categoria)
+                .criadoEm(LocalDateTime.now())
+                .build();
+
+        when(produtoRepository.findByCategoriaNomeIgnoreCaseAndAtivoTrue("eletrônicos"))
+                .thenReturn(List.of(p1, p2));
+
+        List<ProdutoResponse> respostas = produtoService.buscarPorNomeCategoria("eletrônicos");
+
+        assertEquals(2, respostas.size());
+        assertTrue(respostas.stream().anyMatch(r -> r.nome().equals("Smartphone X")));
+        assertTrue(respostas.stream().anyMatch(r -> r.nome().equals("Fone Bluetooth")));
+
+        verify(produtoRepository).findByCategoriaNomeIgnoreCaseAndAtivoTrue("eletrônicos");
+    }
+
+
 }
