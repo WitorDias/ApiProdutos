@@ -16,7 +16,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfig {
 
     private SecurityFilter securityFilter;
@@ -28,29 +27,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(csef -> csef.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos
-                        .requestMatchers(HttpMethod.POST, "/v1/usuarios").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
-                        // Swagger/OpenAPI
-                        .requestMatchers(
-                                "/v3/api-docs",
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/swagger-resources/**",
-                                "/webjars/**"
-                        ).permitAll()
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/auditoria/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
-                .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
@@ -63,4 +49,17 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    @Bean
+    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+        var cors = new org.springframework.web.cors.CorsConfiguration();
+
+        cors.addAllowedOriginPattern("*");
+        cors.addAllowedMethod("*");
+        cors.addAllowedHeader("*");
+        cors.setAllowCredentials(true);
+
+        var source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cors);
+        return source;
+    }
 }
